@@ -19,3 +19,20 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@layer base {
+  html {
+    @apply h-full;
+  }
+  body {
+    @apply flex h-full flex-col;
+  }
+
+  a {
+    @apply cursor-pointer;
+  }
+
+  h1 {
+    @apply text-5xl font-extrabold max-md:text-4xl;
+  }
+}
