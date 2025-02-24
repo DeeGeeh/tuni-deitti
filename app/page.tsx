@@ -1,8 +1,8 @@
 // LANDING PAGE
 "use client";
 
-import React from 'react';
-import { useRouter } from 'next/navigation';
+import React from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export default function Home() {
           <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold text-blue-600">TuniDeitti</h1>
             <button
-              onClick={() => router.push('/login')}
+              onClick={() => router.push("/login")}
               className="px-6 py-2 text-blue-600 border-2 border-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-colors"
             >
               Kirjaudu sisään
@@ -27,14 +27,13 @@ export default function Home() {
       {/* Hero Section */}
       <div className="pt-32 pb-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            Löydä Wappufrendi
-          </h1>
+          <h1 className="text-gray-900 mb-6">Löydä Wappufrendi</h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Tutustu muihin opiskelijoihin ja löydä seuraa Wappuun. TuniDeitti yhdistää sinut samanhenkisten opiskelijoiden kanssa.
+            Tutustu muihin opiskelijoihin ja löydä seuraa Wappuun. TuniDeitti
+            yhdistää sinut samanhenkisten opiskelijoiden kanssa.
           </p>
           <button
-            onClick={() => router.push('/login')}
+            onClick={() => router.push("/login")}
             className="bg-blue-600 text-white px-8 py-4 rounded-full text-lg font-medium hover:bg-blue-700 transition-colors"
           >
             Aloita nyt
@@ -49,22 +48,35 @@ export default function Home() {
             <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">🎓</span>
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-black">Opiskelijoille</h3>
-            <p className="text-gray-600">Vain yliopisto-opiskelijoille. Varmista turvallinen ja luotettava ympäristö.</p>
+            <h3 className="text-xl font-semibold mb-2 text-black">
+              Opiskelijoille
+            </h3>
+            <p className="text-gray-600">
+              Vain yliopisto-opiskelijoille. Varmista turvallinen ja luotettava
+              ympäristö.
+            </p>
           </div>
           <div className="text-center">
             <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">🎭</span>
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-black">Yhteisiä kiinnostuksia</h3>
-            <p className="text-gray-600">Löydä frendejä samoilla kiinnostuksenkohteilla ja arvoilla.</p>
+            <h3 className="text-xl font-semibold mb-2 text-black">
+              Yhteisiä kiinnostuksia
+            </h3>
+            <p className="text-gray-600">
+              Löydä frendejä samoilla kiinnostuksenkohteilla ja arvoilla.
+            </p>
           </div>
           <div className="text-center">
             <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">🎉</span>
             </div>
-            <h3 className="text-xl font-semibold mb-2 text-black">Wapputapahtumat</h3>
-            <p className="text-gray-600">Jaa ja löydä Wapputapahtumia. Älä vietä Wappua yksin!</p>
+            <h3 className="text-xl font-semibold mb-2 text-black">
+              Wapputapahtumat
+            </h3>
+            <p className="text-gray-600">
+              Jaa ja löydä Wapputapahtumia. Älä vietä Wappua yksin!
+            </p>
           </div>
         </div>
       </div>
@@ -72,12 +84,15 @@ export default function Home() {
       {/* CTA Section */}
       <div className="py-20 bg-sky-100">
         <div className="max-w-4xl mx-auto text-center px-4">
-          <h2 className="text-3xl font-bold mb-4 text-black">Valmiina löytämään uusia frendejä?</h2>
+          <h2 className="text-3xl font-bold mb-4 text-black">
+            Valmiina löytämään uusia frendejä?
+          </h2>
           <p className="text-gray-600 mb-8">
-            Liity satojen muiden opiskelijoiden joukkoon ja tee Wapustasi ikimuistoinen!
+            Liity satojen muiden opiskelijoiden joukkoon ja tee Wapustasi
+            ikimuistoinen!
           </p>
           <button
-            onClick={() => router.push('/login')}
+            onClick={() => router.push("/login")}
             className="bg-blue-600 text-white px-8 py-3 rounded-full font-medium hover:bg-blue-700 transition-colors"
           >
             Luo tili nyt
