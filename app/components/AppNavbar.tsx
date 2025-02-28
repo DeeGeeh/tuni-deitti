@@ -16,7 +16,7 @@ export default function AppNavbar() {
           {/* Logo */}
           <div className="flex">
             <div className="flex-shrink-0">
-              <Link href="/app" className="text-xl font-bold text-tuni-blue">
+              <Link href="/app" className="text-2xl font-bold text-tuni-blue">
                 TuniDeitti
               </Link>
             </div>
