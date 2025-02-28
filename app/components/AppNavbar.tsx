@@ -16,17 +16,17 @@ export default function AppNavbar() {
           {/* Logo */}
           <div className="flex">
             <div className="flex-shrink-0">
-              <Link href="/app" className="text-2xl font-bold text-tuni-blue">
+              <Link href="/swipe" className="text-2xl font-bold text-tuni-blue">
                 TuniDeitti
               </Link>
             </div>
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="flex items-center lg:hidden">
+          <div className="items-center lg:hidden">
             <button
               type="button"
-              className="p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+              className="p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 rounded-xl"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-expanded={isMobileMenuOpen}
             >

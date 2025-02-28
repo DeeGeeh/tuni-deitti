@@ -4,7 +4,7 @@ import { Home, User, Heart, Settings } from "lucide-react"; // Example icons
 
 // Define navigation items for the mobile footer
 const navItems = [
-  { name: "Koti", path: "/dashboard", icon: <Home className="h-6 w-6" /> },
+  { name: "Koti", path: "/swipe", icon: <Home className="h-6 w-6" /> },
   { name: "Matchit", path: "/matches", icon: <Heart className="h-6 w-6" /> },
   { name: "Profiili", path: "/profile", icon: <User className="h-6 w-6" /> },
   {
@@ -23,8 +23,8 @@ export default function AppFooter() {
           {navItems.map((item) => (
             <Link
               key={item.path}
-              href={`/app${item.path}`}
-              className="flex flex-col items-center justify-center text-tuni-blue hover:text-tuni-blue/80"
+              href={`${item.path}`}
+              className="flex flex-col items-center justify-center text-tuni-blue rounded-sm hover:bg-tuni-blue/10 transition-transform"
             >
               {item.icon}
               <span className="text-xs mt-1">{item.name}</span>

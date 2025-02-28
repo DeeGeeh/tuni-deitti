@@ -21,7 +21,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <AppNavbar />
 
       {/* Main content */}
-      <main className="pt-16 min-h-screen">{children}</main>
+      <main className="pt-16">{children}</main>
 
       <AppFooter />
     </div>
