@@ -2,6 +2,7 @@
 "use client";
 
 import React from "react";
+import Navbar from "./components/Navbar";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
@@ -10,20 +11,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-100 to-white">
       {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-sm fixed w-full z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-tuni-blue">TuniDeitti</h1>
-            <button
-              onClick={() => router.push("/login")}
-              className="px-6 py-2 text-tuni-blue border-2 border-tuni-blue rounded-full hover:bg-tuni-blue hover:text-white transition-colors"
-            >
-              Kirjaudu sisään
-            </button>
-          </div>
-        </div>
-      </nav>
-
+      <Navbar></Navbar>
       {/* Hero Section */}
       <div className="pt-32 pb-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
