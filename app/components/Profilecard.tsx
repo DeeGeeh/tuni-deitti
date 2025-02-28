@@ -115,7 +115,7 @@ const SwipeableCard = () => {
   return (
     <div className="w-full max-w-sm mx-auto h-screen flex flex-col items-center justify-center">
       <div
-        className="relative w-72 h-96 rounded-xl shadow-lg overflow-hidden cursor-grab bg-white"
+        className="relative w-102 h-170 rounded-xl shadow-lg overflow-hidden cursor-grab bg-white"
         style={{
           transform: `translateX(${offsetX}px) rotate(${offsetX * 0.1}deg)`,
           transition: isDragging ? "none" : "transform 0.3s ease",
