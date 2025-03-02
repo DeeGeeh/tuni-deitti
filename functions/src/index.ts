@@ -7,11 +7,11 @@
 // import { onDocumentCreated } from "firebase-functions/v2/firestore";
 
 // The Firebase Admin SDK to access Firestore.
-import { initializeApp } from "firebase-admin/app";
+// import { initializeApp } from "firebase-admin/app";
 // import { getFirestore } from "firebase-admin/firestore";
 
 // Initialize the Firebase app
-initializeApp();
+// initializeApp();
 
 // Interface for user profile data
 interface ProfileData {
