@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tuni Deitti",
+  title: "TuniDeitti",
   description: "Löydä wappufrendi!",
 };
 
