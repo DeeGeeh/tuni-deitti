@@ -12,7 +12,7 @@ export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   // Define which paths are protected
-  const protectedPaths = ["/dashboard", "/profile", "/settings"];
+  const protectedPaths = ["/matches", "/profile", "/settings", "/swipe"];
   const isPathProtected = protectedPaths.some((protectedPath) =>
     path.startsWith(protectedPath)
   );
