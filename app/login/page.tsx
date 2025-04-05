@@ -3,13 +3,19 @@
 
 import React, { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+} from "firebase/auth";
 import { auth } from "@/app/lib/firebase";
 import Link from "next/link";
 
 export default function LoginPage() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [rememberMe, setRememberMe] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
@@ -26,11 +32,14 @@ export default function LoginPage() {
     try {
       setIsLoading(true);
 
+      // Set Firebase Authentication persistence based on "Remember Me"
+      const persistence = rememberMe
+        ? browserLocalPersistence
+        : browserSessionPersistence;
+      await setPersistence(auth, persistence);
+
       // Sign in with Firebase Authentication
       await signInWithEmailAndPassword(auth, email, password);
-
-      // Navigate to swipe app after successful login
-      // TODO: Save token to local storage so that user stays logged in
       router.push("/swipe");
     } catch (err: any) {
       setError("Kirjautuminen epäonnistui. Tarkista sähköposti ja salasana.");
@@ -99,6 +108,8 @@ export default function LoginPage() {
                 name="remember-me"
                 type="checkbox"
                 className="h-4 w-4 rounded border-gray-300 text-tuni-blue focus:ring-tuni-blue"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
               />
               <label
                 htmlFor="remember-me"
