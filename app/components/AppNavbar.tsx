@@ -5,8 +5,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Bell, User, LogOut, Settings } from "lucide-react";
+import App from "next/app";
 
-export default function AppNavbar() {
+interface AppNavbarProps {
+  user: any;
+}
+
+export default function AppNavbar({ user }: AppNavbarProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -79,10 +84,10 @@ export default function AppNavbar() {
             <div className="border-t border-gray-200 pt-4 pb-3">
               <div className="px-4">
                 <div className="text-base font-medium text-gray-800">
-                  Käyttäjänimi {/* TODO: TÄHÄN USER.NAME */}
+                  user.name
                 </div>
                 <div className="text-sm font-medium text-gray-500">
-                  user@tuni.fi {/* TODO: TÄHÄN USER.EMAIL */}
+                  user.email
                 </div>
               </div>
               <div className="mt-3 space-y-1">
