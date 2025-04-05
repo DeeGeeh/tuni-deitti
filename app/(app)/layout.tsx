@@ -21,7 +21,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Top navigation bar */}
-      <AppNavbar user={firebaseUser} />
+      <AppNavbar />
 
       {/* Main content */}
       <main className="pt-16">{children}</main>
