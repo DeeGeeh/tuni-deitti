@@ -1,0 +1,10 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{userId}/{fileName} {
+      allow read: if request.auth.uid == userId; // Only the user can read their image
+      allow write: if request.auth.uid == userId; // Only the user can write their image.
+    }
+  }
+}

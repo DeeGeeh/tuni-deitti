@@ -2,6 +2,9 @@
 "use client";
 
 import React, { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/app/lib/firebase";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -9,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -22,16 +26,12 @@ export default function LoginPage() {
     try {
       setIsLoading(true);
 
-      // TODO: AUTH LOGIIKKA TÄNNE
-      // Esimerkki: const response = await signIn(email, password);
-
-      console.log("Logging in with:", email);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Sign in with Firebase Authentication
+      await signInWithEmailAndPassword(auth, email, password);
 
       // Navigate to swipe app after successful login
-      // router.push("/???????");
+      // TODO: Save token to local storage so that user stays logged in
+      router.push("/swipe");
     } catch (err: any) {
       setError("Kirjautuminen epäonnistui. Tarkista sähköposti ja salasana.");
       console.error(err);
@@ -110,7 +110,7 @@ export default function LoginPage() {
 
             <div className="text-sm">
               <Link
-                href="/?????" // TODO: REITTI TÄLLE
+                href="/forgot-password"
                 className="text-tuni-blue hover:text-tuni-blue/80"
               >
                 Unohditko salasanan?
@@ -133,7 +133,7 @@ export default function LoginPage() {
           <p className="text-sm text-foreground/70">
             Eikö sinulla ole tiliä?{" "}
             <Link
-              href="/?????" // TODO: REITTI TÄLLE
+              href="/signup"
               className="text-tuni-blue hover:text-tuni-blue/80 font-medium"
             >
               Rekisteröidy
