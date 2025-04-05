@@ -1,18 +1,29 @@
-// APP TOP BAR
-
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Bell, User, LogOut, Settings } from "lucide-react";
-import App from "next/app";
+import { useAuth } from "../contexts/AuthContext";
+import { getAuth, signOut } from "firebase/auth";
 
-interface AppNavbarProps {
-  user: any;
-}
-
-export default function AppNavbar({ user }: AppNavbarProps) {
+export default function AppNavbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { user, loading } = useAuth();
+  const auth = getAuth();
+  const router = useRouter();
+
+  // Sign out the user
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/");
+      console.log("User logged out successfully");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
 
   return (
     <header className="bg-white border-b border-gray-200 fixed w-full z-10">
@@ -66,12 +77,35 @@ export default function AppNavbar({ user }: AppNavbarProps) {
               <button
                 type="button"
                 className="flex rounded-full text-sm focus:ring-2 focus:ring-tuni-blue focus:ring-offset-2"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)} // Toggle dropdown
               >
                 <span className="sr-only">Valikko</span>
                 <div className="h-8 w-8 rounded-full bg-tuni-blue/20 flex items-center justify-center text-tuni-blue">
                   <User className="h-5 w-5" />
                 </div>
               </button>
+
+              {/* Dropdown Menu */}
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-20">
+                  <div className="py-1">
+                    <Link
+                      href="/settings"
+                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                    >
+                      <Settings className="h-5 w-5 inline-block mr-2" />
+                      Asetukset
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                    >
+                      <LogOut className="h-5 w-5 inline-block mr-2" />
+                      Kirjaudu ulos
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -84,10 +118,10 @@ export default function AppNavbar({ user }: AppNavbarProps) {
             <div className="border-t border-gray-200 pt-4 pb-3">
               <div className="px-4">
                 <div className="text-base font-medium text-gray-800">
-                  user.name
+                  {user?.displayName || "Käyttäjä"}
                 </div>
                 <div className="text-sm font-medium text-gray-500">
-                  user.email
+                  {user?.email || "Sähköposti"}
                 </div>
               </div>
               <div className="mt-3 space-y-1">
@@ -98,13 +132,13 @@ export default function AppNavbar({ user }: AppNavbarProps) {
                   <Settings className="h-5 w-5 inline-block mr-2" />
                   Asetukset
                 </Link>
-                <Link
-                  href="/api/auth/signout"
-                  className="block px-4 py-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                <button
+                  onClick={handleLogout}
+                  className="block w-full text-left px-4 py-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
                 >
                   <LogOut className="h-5 w-5 inline-block mr-2" />
                   Kirjaudu ulos
-                </Link>
+                </button>
               </div>
             </div>
           </div>
