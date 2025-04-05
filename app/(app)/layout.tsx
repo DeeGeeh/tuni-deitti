@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import AppNavbar from "../components/AppNavbar";
 import AppFooter from "../components/AppFooter";
 import { getAuth } from "firebase/auth";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -19,14 +20,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top navigation bar */}
-      <AppNavbar />
+    <ProtectedRoute>
+      <div className="min-h-screen bg-background">
+        {/* Top navigation bar */}
+        <AppNavbar />
 
-      {/* Main content */}
-      <main className="pt-16">{children}</main>
+        {/* Main content */}
+        <main className="pt-16">{children}</main>
 
-      <AppFooter />
-    </div>
+        <AppFooter />
+      </div>
+    </ProtectedRoute>
   );
 }
