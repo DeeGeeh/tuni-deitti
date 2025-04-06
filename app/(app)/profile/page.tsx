@@ -1,6 +1,5 @@
 // Profile page
 "use client";
-import { list } from "postcss";
 import React, { useState, FormEvent, useEffect } from "react";
 
 export default function DashboardApp() {
@@ -10,6 +9,7 @@ export default function DashboardApp() {
   const [guild, setGuild] = useState<string>("");
   const [interestedEvents, setInterestedEvents] = useState<string>("");
   const [changedField, setChangedField] = useState<Boolean>(false);
+
   interface FormData {
     name: string;
     userName: string;
