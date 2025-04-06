@@ -4,7 +4,11 @@ import React, { useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { validateRegistrationForm } from "@/app/lib/auth/validation";
-import { getAuth, createUserWithEmailAndPassword, UserCredential } from "firebase/auth";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  UserCredential,
+} from "firebase/auth";
 import { User } from "../types/schema";
 import { setDoc, doc, Timestamp } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
@@ -50,6 +54,7 @@ export default function SignUpPage() {
         const userData: User = {
           uid: user.uid,
           displayName: `${firstName} ${lastName}`,
+          email: user.email || "",
           birthDate: Timestamp.now(), // Placeholder, should be collected during profile creation
           gender: "", // Placeholder, should be collected during profile creation
           guild: "", // Placeholder, should be collected during profile creation
@@ -61,7 +66,7 @@ export default function SignUpPage() {
 
         const userRef = doc(db, "Profiles", user.uid);
         await setDoc(userRef, userData);
-        
+
         // TODO Send email verification
         // TODO Route to profile creation page
         const token = userCredential.user.getIdToken();
