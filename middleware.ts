@@ -2,17 +2,19 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  const maintenanceMode = true; // Set to true when the site is under maintenance
+  // Set to true when site is under maintenance
+  // I'll figure out a better way of doing this later....
+  const maintenanceMode = true;
 
   if (maintenanceMode && !req.nextUrl.pathname.startsWith("/maintenance")) {
+    console.log("Page is under maintanance.");
     return NextResponse.redirect(new URL("/maintenance", req.url));
   }
 
-  // Get the pathname
   const path = req.nextUrl.pathname;
 
   // Define which paths are protected
-  const protectedPaths = ["/dashboard", "/profile", "/settings"];
+  const protectedPaths = ["/matches", "/profile", "/settings", "/swipe"];
   const isPathProtected = protectedPaths.some((protectedPath) =>
     path.startsWith(protectedPath)
   );
@@ -35,7 +37,7 @@ export function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-// Configure the middleware to run on specific paths
+// Config the middleware to run on specific paths
 export const config = {
-  matcher: ["/dashboard/:path*", "/profile/:path*", "/settings/:path*"],
+  matcher: ["/swipe/:path*", "/profile/:path*", "/settings/:path*"],
 };

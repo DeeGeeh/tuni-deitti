@@ -1,66 +1,197 @@
-// app/(app)/matches/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { MoreHorizontal, Send } from "lucide-react";
+import {
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  onSnapshot,
+  serverTimestamp,
+  doc,
+  getDoc,
+} from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { db } from "@/app/lib/firebase";
+import { Message } from "@/app/types/schema";
+import { getUserMatches, checkForMatch } from "@/app/lib/swipeapp";
+import { formatMessageTime, formatLastActive } from "@/app/lib/dateUtils";
 
-// Mock data for matches
-const mockMatches = [
-  {
-    id: 1,
-    name: "Emma",
-    avatar: "/test.png",
-    lastActive: "2 min sitten",
-    unread: true,
-  },
-  {
-    id: 2,
-    name: "Mikael",
-    avatar: "/test.png",
-    lastActive: "5 min sitten",
-    unread: false,
-  },
-];
+interface Match {
+  id: string;
+  name: string;
+  avatar: string;
+  lastActive: string;
+  unread: boolean;
+  lastMessage: string;
+}
 
-// Mock messages for a conversation
-const mockMessages = [
-  {
-    id: 1,
-    sender: "Emma",
-    content: "Omg moi",
-    time: "12:32",
-    isSelf: false,
-  },
-  {
-    id: 2,
-    sender: "Sinä",
-    content: "ä",
-    time: "13:34",
-    isSelf: true,
-  },
-];
+interface TransformedMatch {
+  id: string;
+  name: string;
+  avatar: string;
+  lastActive: string;
+  unread: boolean;
+  lastMessage: string;
+}
 
 export default function MatchesPage() {
-  const [selectedMatch, setSelectedMatch] = useState(mockMatches[0]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const auth = getAuth();
 
-  // Handler for sending a new message
-  const handleSendMessage = (e: React.FormEvent) => {
+  // Scroll to bottom of messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Load current user and fetch matches
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        setCurrentUser(user);
+        const userDoc = await getDoc(doc(db, "Profiles", user.uid));
+
+        if (userDoc.exists()) {
+          setCurrentUser({
+            ...user,
+            ...userDoc.data(),
+          });
+        }
+        await fetchMatches(user.uid);  
+      } else {
+        setCurrentUser(null);
+        setMatches([]);
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch all matches for the current user
+  const fetchMatches = async (userId: string) => {
+    try {
+      setLoading(true);
+      const userMatches = await getUserMatches(userId);
+      
+      // Transform matches to the format expected by the UI
+      const transformedMatches = await Promise.all(
+        userMatches.map(async (match) => {
+          // Get the other user's ID from the match
+          const otherUserId = match.users.find(id => id !== userId);
+          if (!otherUserId) return null;
+
+          // Fetch the other user's profile
+          const userDoc = await getDoc(doc(db, "Profiles", otherUserId));
+          const userData = userDoc.data();
+
+          if (!userData) return null;
+
+          const transformedMatch: TransformedMatch = {
+            id: match.matchId,
+            name: userData.displayName || "Unknown User",
+            avatar: userData.pictures || "/tuni-naama.png", // THIS IS THE DEFAULT AVATAR
+            lastActive: formatLastActive(userData.lastActive),
+            unread: false, // TODO: Implement unread status
+            lastMessage: "", // TODO: Implement last message
+          };
+
+          return transformedMatch;
+        })
+      );
+
+      // Filter out any null matches and set the state
+      const validMatches = transformedMatches.filter((match): match is TransformedMatch => match !== null);
+      setMatches(validMatches);
+
+      if (validMatches.length > 0 && !selectedMatch) {
+        setSelectedMatch(validMatches[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching matches:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Listen for messages when a match is selected
+  useEffect(() => {
+    if (!selectedMatch || !currentUser) return;
+
+    const chatId = selectedMatch.id;
+    const messagesQuery = query(
+      collection(db, "messages", chatId, "messages"),
+      orderBy("timestamp", "asc")
+    );
+
+    const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+      const messagesList: Message[] = snapshot.docs.map((doc) => ({
+        messageId: doc.id,
+        ...(doc.data() as Omit<Message, "messageId">),
+      }));
+      setMessages(messagesList);
+      scrollToBottom();
+    });
+
+    return () => unsubscribe();
+  }, [selectedMatch, currentUser]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (messageInput.trim()) {
-      console.log("Sending message:", messageInput);
+    if (!messageInput.trim() || !selectedMatch || !currentUser) return;
+
+    try {
+      const chatId = selectedMatch.id;
+
+      await addDoc(collection(db, "messages", chatId, "messages"), {
+        content: messageInput.trim(),
+        senderId: currentUser.uid,
+        timestamp: serverTimestamp(),
+        read: false,
+      });
+
       setMessageInput("");
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+  };
+
+  const handleSwipe = async (
+    targetUserId: string,
+    direction: "like" | "dislike"
+  ) => {
+    if (!currentUser) return;
+
+    try {
+      const isMatch = await checkForMatch(currentUser.uid, targetUserId);
+      if (isMatch) {
+        console.log("It's a match!");
+        await fetchMatches(currentUser.uid);
+      }
+    } catch (error) {
+      console.error("Error handling swipe:", error);
     }
   };
 
   return (
     <div className="flex flex-col h-[calc(100vh-128px)]">
-      {/* Recent matches at the top of the entire page */}
+      {/* Matches */}
       <div className="p-4 border-b border-gray-200 bg-white">
         <h2 className="text-sm font-medium text-gray-500 mb-3">Matchit</h2>
         <div className="flex space-x-4 overflow-x-auto pb-2">
-          {mockMatches.slice(0, 6).map((match) => (
+          {matches.slice(0, 6).map((match) => (
             <div key={match.id} className="flex-shrink-0">
               <div
                 className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden relative cursor-pointer border-2 border-tuni-blue"
@@ -82,56 +213,68 @@ export default function MatchesPage() {
         </div>
       </div>
 
+      {/* Chat */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left sidebar with match list */}
-        <div className="w-full max-w-xs border-r border-gray-200 flex flex-1 flex-col bg-white">
-          {/* Conversations list */}
-          <div className="flex-1 overflow-y-auto">
-            {mockMatches.map((match) => (
-              <div
-                key={match.id}
-                className={`p-3 flex items-center cursor-pointer ${
-                  selectedMatch?.id === match.id
-                    ? "bg-tuni-blue/10"
-                    : "hover:bg-gray-50"
-                }`}
-                onClick={() => setSelectedMatch(match)}
-              >
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
-                    <Image
-                      src={match.avatar}
-                      alt={match.name}
-                      fill
-                      sizes="48px"
-                      className="object-cover"
-                    />
+        {/* Sidebar */}
+        <div className="w-full max-w-xs border-r border-gray-200 flex flex-col bg-white">
+          {loading ? (
+            <div className="flex-1 flex justify-center items-center">
+              <p>Loading matches...</p>
+            </div>
+          ) : matches.length > 0 ? (
+            <div className="flex-1 overflow-y-auto">
+              {matches.map((match) => (
+                <div
+                  key={match.id}
+                  className={`p-3 flex items-center cursor-pointer ${
+                    selectedMatch?.id === match.id
+                      ? "bg-tuni-blue/10"
+                      : "hover:bg-gray-50"
+                  }`}
+                  onClick={() => setSelectedMatch(match)}
+                >
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden relative">
+                      <Image
+                        src={match.avatar}
+                        alt={match.name}
+                        fill
+                        sizes="48px"
+                        className="object-cover"
+                      />
+                    </div>
+                    {match.unread && (
+                      <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-tuni-blue"></span>
+                    )}
                   </div>
-                  {match.unread && (
-                    <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-tuni-blue"></span>
-                  )}
-                </div>
-                <div className="ml-3 flex-1 overflow-hidden">
-                  <div className="flex justify-between items-center">
-                    <p className="font-medium text-foreground">{match.name}</p>
-                    <span className="text-xs text-gray-500">
-                      {match.lastActive}
-                    </span>
+                  <div className="ml-3 flex-1 overflow-hidden">
+                    <div className="flex justify-between items-center">
+                      <p className="font-medium text-foreground">
+                        {match.name}
+                      </p>
+                      <span className="text-xs text-gray-500">
+                        {match.lastActive}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 truncate">
+                      {match.lastMessage || "Aloita keskustelu!"}
+                    </p>
                   </div>
-                  <p className="text-sm text-gray-500 truncate">
-                    {match.unread ? "Uusi viesti!" : "// GET MESSAGE"}
-                  </p>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-4 text-center text-gray-500">
+              Ei vielä matcheja.
+            </div>
+          )}
         </div>
 
-        {/* Right side: Message area */}
+        {/* Messages */}
         <div className="flex-1 flex flex-col bg-gray-50 overflow-hidden">
           {selectedMatch ? (
             <>
-              {/* Chat header */}
+              {/* Chat Header */}
               <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
                 <div className="flex items-center">
                   <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden relative">
@@ -157,37 +300,47 @@ export default function MatchesPage() {
                 </button>
               </div>
 
-              {/* Messages area */}
+              {/* Messages Area */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {mockMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`flex ${
-                      message.isSelf ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    <div
-                      className={`max-w-xs md:max-w-md lg:max-w-lg rounded-lg px-4 py-2 ${
-                        message.isSelf
-                          ? "bg-tuni-blue text-white rounded-br-none"
-                          : "bg-white text-foreground rounded-bl-none border border-gray-200"
-                      }`}
-                    >
-                      <p className="text-sm">{message.content}</p>
-                      <span
-                        className={`text-xs ${
-                          message.isSelf ? "text-blue-100" : "text-gray-500"
-                        } block mt-1`}
+                {messages.length > 0 ? (
+                  messages.map((message) => {
+                    const isSelf = message.senderId === currentUser?.uid;
+                    return (
+                      <div
+                        key={message.messageId}
+                        className={`flex ${
+                          isSelf ? "justify-end" : "justify-start"
+                        }`}
                       >
-                        {message.time}
-                      </span>
-                    </div>
+                        <div
+                          className={`max-w-xs md:max-w-md lg:max-w-lg rounded-lg px-4 py-2 ${
+                            isSelf
+                              ? "bg-tuni-blue text-white rounded-br-none"
+                              : "bg-white text-foreground rounded-bl-none border border-gray-200"
+                          }`}
+                        >
+                          <p className="text-sm">{message.content}</p>
+                          <span
+                            className={`text-xs ${
+                              isSelf ? "text-blue-100" : "text-gray-500"
+                            } block mt-1`}
+                          >
+                            {formatMessageTime(message.timestamp)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="flex justify-center items-center h-full text-gray-500">
+                    Ei vielä viestejä. Aloita keskustelu!
                   </div>
-                ))}
+                )}
+                <div ref={messagesEndRef} />
               </div>
 
-              {/* Message input */}
-              <div className="min-width-0 p-3 border-t border-gray-200 bg-white ">
+              {/* Message Input */}
+              <div className="min-width-0 p-3 border-t border-gray-200 bg-white">
                 <form
                   onSubmit={handleSendMessage}
                   className="flex items-center"
@@ -217,7 +370,9 @@ export default function MatchesPage() {
               <h3 className="text-lg font-medium text-foreground mb-2">
                 Valitse keskustelu
               </h3>
-              <p className="text-gray-500 max-w-md">wompwomp</p>
+              <p className="text-gray-500 max-w-md">
+                Valitse henkilö listalta aloittaaksesi keskustelun
+              </p>
             </div>
           )}
         </div>

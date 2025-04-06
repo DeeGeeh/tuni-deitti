@@ -1,4 +1,12 @@
+import { redirect } from "next/navigation";
+
+const maintenanceMode = true; // Set this to `false` to disable maintenance mode
+
 export default function MaintenancePage() {
+  if (!maintenanceMode) {
+    redirect("/");
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="text-center">

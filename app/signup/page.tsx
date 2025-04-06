@@ -4,8 +4,10 @@ import React, { useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { validateRegistrationForm } from "@/app/lib/auth/validation";
-import { getAuth } from "firebase/auth";
-import { createUserWithEmailAndPassword, UserCredential } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, UserCredential } from "firebase/auth";
+import { User } from "../types/schema";
+import { setDoc, doc, Timestamp } from "firebase/firestore";
+import { db } from "@/app/lib/firebase";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState<string>("");
@@ -38,16 +40,40 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     const auth = getAuth();
-    createUserWithEmailAndPassword(auth, email, password)
-      .then((userCredential: UserCredential) => {
+    await createUserWithEmailAndPassword(auth, email, password)
+      .then(async (userCredential: UserCredential) => {
         // Signed up
         const user = userCredential.user;
         console.log("User signed up", user);
 
         // TODO Save user data to Firestore
+        const userData: User = {
+          uid: user.uid,
+          displayName: `${firstName} ${lastName}`,
+          birthDate: Timestamp.now(), // Placeholder, should be collected during profile creation
+          gender: "", // Placeholder, should be collected during profile creation
+          guild: "", // Placeholder, should be collected during profile creation
+          interests: [], // Placeholder, should be collected during profile creation
+          photos: [], // Placeholder, should be collected during profile creation
+          bio: "", // Placeholder, should be collected during profile creation
+          lastActive: Timestamp.now(),
+        };
+
+        const userRef = doc(db, "Profiles", user.uid);
+        await setDoc(userRef, userData);
+        
         // TODO Send email verification
         // TODO Route to profile creation page
-        router.push("/swipe");
+        const token = userCredential.user.getIdToken();
+
+        // Set the session cookie
+        document.cookie = `session=${token}; path=/; max-age=604800; secure; samesite=strict`;
+
+        // Redirect to the desired page (or default to /swipe)
+        const redirectTo =
+          new URLSearchParams(window.location.search).get("redirect") ||
+          "/swipe";
+        router.push(redirectTo);
       })
       .catch((error) => {
         const errorCode: number = error.code;

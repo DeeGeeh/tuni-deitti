@@ -39,8 +39,20 @@ export default function LoginPage() {
       await setPersistence(auth, persistence);
 
       // Sign in with Firebase Authentication
-      await signInWithEmailAndPassword(auth, email, password);
-      router.push("/swipe");
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const token = await userCredential.user.getIdToken();
+
+      // Set the session cookie
+      document.cookie = `session=${token}; path=/; max-age=604800; secure; samesite=strict`;
+
+      // Redirect to the desired page (or default to /swipe)
+      const redirectTo =
+        new URLSearchParams(window.location.search).get("redirect") || "/swipe";
+      router.push(redirectTo);
     } catch (err: any) {
       setError("Kirjautuminen epäonnistui. Tarkista sähköposti ja salasana.");
       console.error(err);
