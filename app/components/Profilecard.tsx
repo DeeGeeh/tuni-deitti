@@ -3,42 +3,20 @@
 import React, { useState } from "react";
 import { Heart, X } from "lucide-react";
 
-const test_questions = ["Olen huono", "Tarjoan ekat jos"];
-
 interface Profile {
-  id: number;
+  id: string;
   name: string;
   age: number;
-  organization: string;
-  image: string;
+  guild: string;
+  pictures: string;
   questions?: string[];
 }
 
-const mockProfiles: Profile[] = [
-  {
-    id: 1,
-    name: "Kädet Heiluu",
-    age: 23,
-    organization: "Luuppi",
-    image: "test.png",
-    questions: test_questions,
-  },
-  {
-    id: 2,
-    name: "Teemu Teekkari",
-    age: 22,
-    organization: "TiTe",
-    image: "test.png",
-    questions: test_questions,
-  },
-];
-
-const SwipeableCard = () => {
+const SwipeableCard = ({ profiles }: { profiles: Profile[] }) => {
   const [startX, setStartX] = useState(0);
   const [offsetX, setOffsetX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
-  const [profiles] = useState(mockProfiles);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setStartX(e.touches[0].clientX);
@@ -85,7 +63,6 @@ const SwipeableCard = () => {
     }
   };
 
-  // Handle button clicks
   const handleButtonClick = (direction: "left" | "right") => {
     setOffsetX(direction === "left" ? -101 : 101);
     setTimeout(() => {
@@ -94,7 +71,6 @@ const SwipeableCard = () => {
     }, 200);
   };
 
-  // No more profiles
   if (currentProfileIndex >= profiles.length) {
     return (
       <div className="w-full max-w-sm mx-auto h-screen flex items-center justify-center">
@@ -129,7 +105,7 @@ const SwipeableCard = () => {
         onMouseLeave={handleInteractionEnd}
       >
         <img
-          src={currentProfile.image}
+          src={currentProfile.pictures}
           alt={currentProfile.name}
           className="w-full h-full object-cover"
         />
@@ -138,7 +114,7 @@ const SwipeableCard = () => {
           <h3 className="text-xl font-bold">
             {currentProfile.name}, {currentProfile.age}
           </h3>
-          <p className="text-sm">{currentProfile.organization}</p>
+          <p className="text-sm">{currentProfile.guild}</p>
         </div>
 
         {/* Swipe Text Effects */}
