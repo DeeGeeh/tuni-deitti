@@ -34,6 +34,7 @@ export async function createMatch(userId1: string, userId2: string) {
   const matchRef = doc(db, "matches", matchId);
   const matchDoc = await getDoc(matchRef);
 
+
   if (!matchDoc.exists()) {
     // Create new match document
     await setDoc(matchRef, {
@@ -86,12 +87,11 @@ export async function checkForMatch(
 }
 
 export async function getUserMatches(userId: string) {
-
   // Check that user has matches
   const userProfileRef = doc(db, "Profiles", userId);
   const userProfileDoc = await getDoc(userProfileRef);
 
-  if (!userProfileDoc.exists() || userProfileDoc.data()?.matchedUserIDs.length === 0) {
+  if (!userProfileDoc.exists() || userProfileDoc.data()?.matchedUsers.length === 0) {
     return [];
   }
 
