@@ -5,7 +5,7 @@ import { Timestamp } from "firebase/firestore";
 
 interface User {
   uid: string;
-  displayName: string;
+  displayName: string | null;
   birthDate: Timestamp;
   gender: string;
   guild: string;
@@ -44,6 +44,7 @@ interface Conversation {
 }
 
 interface Message {
+  messageId: string;
   senderId: string;
   content: string;
   timestamp: Timestamp;
