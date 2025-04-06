@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/app/lib/firebase"; // Import Firestore instance
+import { db } from "@/app/lib/firebase";
 import SwipeableCard from "@/app/components/Profilecard";
 
 export default function SwipePage() {
@@ -13,14 +13,12 @@ export default function SwipePage() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        // Query the "users" collection from Firestore
         const querySnapshot = await getDocs(collection(db, "Profiles"));
         const userData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
         setUsers(userData);
-        console.log("Fetched users:", userData);
       } catch (error) {
         console.error("Error fetching users:", error);
       } finally {
