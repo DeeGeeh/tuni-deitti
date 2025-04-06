@@ -12,10 +12,10 @@ export default function Navbar() {
 
   // Redirect to swipe page if signed in.
   useEffect(() => {
-    if (user) {
+    if (user && pathname === "/") {
       router.push("/swipe");
     }
-  }, [user, router]);
+  }, [user, router, pathname]);
 
   const handleLoginClick = () => {
     if (!loading && user) {
