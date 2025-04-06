@@ -25,6 +25,10 @@ export default function SwipePage() {
         const currentUserProfile = await getDoc(doc(db, "Profiles", currentUser.uid));
         const matchedUsers = currentUserProfile.data()?.matchedUsers || [];
 
+        // Get all users that have swiped right on the current user
+        const swipedUsers = await getDocs(collection(db, "swipes", currentUser.uid, "swiped"));
+        const swipedUserIds = swipedUsers.docs.map((doc) => doc.id);
+
         // Get all profiles
         const querySnapshot = await getDocs(collection(db, "Profiles"));
         const userData = querySnapshot.docs
@@ -35,7 +39,8 @@ export default function SwipePage() {
           .filter((user) => {
             return (
               user.id !== currentUser.uid && // Exclude current user
-              !matchedUsers.includes(user.id) // Exclude matched users
+              !matchedUsers.includes(user.id) && // Exclude matched users
+              !swipedUserIds.includes(user.id) // Exclude users that have swiped right on
             );
           });
 

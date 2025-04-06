@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Heart, X } from "lucide-react";
-import { createMatch } from "@/app/lib/swipeapp";
+import { createMatch, storeSwipe } from "@/app/lib/swipeapp";
 import { useAuth } from "@/app/contexts/AuthContext";
 
 interface Profile {
@@ -64,18 +64,31 @@ const SwipeableCard = ({ profiles }: { profiles: Profile[] }) => {
 
   const handleSwipe = async (direction: string) => {
     if (currentProfileIndex < profiles.length - 1) {
-      // Add match logic here for right swipes
       if (direction === "right") {
-        console.log("Creating match with", currentUserID, profiles[currentProfileIndex].id);
-        const match = await createMatch(currentUserID, profiles[currentProfileIndex].id);
-        if (match) {
-          console.log(`Matched with ${profiles[currentProfileIndex].name}!`);
+        console.log("Swiping right on", profiles[currentProfileIndex].id);
+        const { isMatch, matchedUserName } = await storeSwipe(currentUserID, profiles[currentProfileIndex].id, "like");
+        if (isMatch) {
+          console.log(`Matched with ${matchedUserName}!`);
+          // TODO: Show match notification/UI with the matched user's name
+          alert(`You matched with ${matchedUserName}!`); // Replace this with a proper UI notification
         }
+      } else {
+        // Store dislike swipe
+        await storeSwipe(currentUserID, profiles[currentProfileIndex].id, "dislike");
       }
       setCurrentProfileIndex((prev) => prev + 1);
     } else {
-      // No more profiles
-      console.log("No more profiles to show");
+      // No more profiles, store the last swipe and refresh
+      if (direction === "right") {
+        const { isMatch, matchedUserName } = await storeSwipe(currentUserID, profiles[currentProfileIndex].id, "like");
+        if (isMatch) {
+          alert(`You matched with ${matchedUserName}!`); // Replace this with a proper UI notification
+        }
+      } else {
+        await storeSwipe(currentUserID, profiles[currentProfileIndex].id, "dislike");
+      }
+      // Refresh the page to get new profiles
+      window.location.reload();
     }
   };
 
