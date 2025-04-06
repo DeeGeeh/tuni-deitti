@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { Heart, X } from "lucide-react";
+import { createMatch } from "@/app/lib/swipeapp";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 interface Profile {
   id: string;
@@ -17,6 +19,14 @@ const SwipeableCard = ({ profiles }: { profiles: Profile[] }) => {
   const [offsetX, setOffsetX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
+  
+  const currentUserID = useAuth().user?.uid;
+
+
+  // THIS SHOULD NEVER HAPPEN
+  if (!currentUserID) {
+    throw new Error("No current user found");
+  }
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setStartX(e.touches[0].clientX);
@@ -50,11 +60,17 @@ const SwipeableCard = ({ profiles }: { profiles: Profile[] }) => {
     setOffsetX(0);
   };
 
-  const handleSwipe = (direction: string) => {
+  const currentProfile = profiles[currentProfileIndex];
+
+  const handleSwipe = async (direction: string) => {
     if (currentProfileIndex < profiles.length - 1) {
       // Add match logic here for right swipes
       if (direction === "right") {
-        console.log(`Matched with ${profiles[currentProfileIndex].name}!`);
+        console.log("Creating match with", currentUserID, profiles[currentProfileIndex].id);
+        const match = await createMatch(currentUserID, profiles[currentProfileIndex].id);
+        if (match) {
+          console.log(`Matched with ${profiles[currentProfileIndex].name}!`);
+        }
       }
       setCurrentProfileIndex((prev) => prev + 1);
     } else {
@@ -85,8 +101,6 @@ const SwipeableCard = ({ profiles }: { profiles: Profile[] }) => {
       </div>
     );
   }
-
-  const currentProfile = profiles[currentProfileIndex];
 
   return (
     <div className="w-full max-w-sm mx-auto h-screen flex flex-col items-center justify-center">

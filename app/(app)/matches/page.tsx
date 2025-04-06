@@ -12,12 +12,12 @@ import {
   serverTimestamp,
   doc,
   getDoc,
-  Timestamp,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db } from "@/app/lib/firebase";
 import { Message } from "@/app/types/schema";
 import { getUserMatches, checkForMatch } from "@/app/lib/swipeapp";
+import { formatMessageTime, formatLastActive } from "@/app/lib/dateUtils";
 
 interface Match {
   id: string;
@@ -98,7 +98,7 @@ export default function MatchesPage() {
           const transformedMatch: TransformedMatch = {
             id: match.matchId,
             name: userData.displayName || "Unknown User",
-            avatar: userData.photoURL || "/default-avatar.png",
+            avatar: userData.pictures || "/tuni-naama.png", // THIS IS THE DEFAULT AVATAR
             lastActive: formatLastActive(userData.lastActive),
             unread: false, // TODO: Implement unread status
             lastMessage: "", // TODO: Implement last message
@@ -134,8 +134,8 @@ export default function MatchesPage() {
 
     const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
       const messagesList: Message[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Omit<Message, "id">),
+        messageId: doc.id,
+        ...(doc.data() as Omit<Message, "messageId">),
       }));
       setMessages(messagesList);
       scrollToBottom();
@@ -147,30 +147,6 @@ export default function MatchesPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  const formatMessageTime = (timestamp: Timestamp) => {
-    if (!timestamp) return "";
-    const date = timestamp.toDate();
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
-
-  const formatLastActive = (timestamp: any) => {
-    if (!timestamp) return "Offline";
-
-    const now = new Date();
-    const lastActive = timestamp.toDate();
-    const diffMinutes = Math.floor(
-      (now.getTime() - lastActive.getTime()) / (1000 * 60)
-    );
-
-    if (diffMinutes < 1) return "Juuri nyt";
-    if (diffMinutes < 60) return `${diffMinutes} min sitten`;
-
-    const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours} h sitten`;
-
-    return lastActive.toLocaleDateString();
-  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -258,7 +234,7 @@ export default function MatchesPage() {
                   onClick={() => setSelectedMatch(match)}
                 >
                   <div className="relative">
-                    <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
+                    <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden relative">
                       <Image
                         src={match.avatar}
                         alt={match.name}
@@ -331,7 +307,7 @@ export default function MatchesPage() {
                     const isSelf = message.senderId === currentUser?.uid;
                     return (
                       <div
-                        key={message.senderId}
+                        key={message.messageId}
                         className={`flex ${
                           isSelf ? "justify-end" : "justify-start"
                         }`}
