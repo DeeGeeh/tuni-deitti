@@ -32,7 +32,7 @@ export async function storeSwipe(
     await setDoc(swipeRef, {
       direction,
       timestamp: new Date(),
-      targetUserId // Add this to help with security rules
+      targetUserId, // Add this to help with security rules
     });
 
     // If it's a like, check for a match
@@ -91,7 +91,10 @@ export async function createMatch(userId1: string, userId2: string) {
 }
 
 // Check if there's a mutual match
-export async function checkForMatch(currentUserId: string, targetUserId: string) {
+export const checkForMatch = async (
+  currentUserId: string,
+  targetUserId: string
+) => {
   try {
     // Check if the target user has already swiped right on current user
     const swipeRef = doc(db, "swipes", targetUserId, "swiped", currentUserId);
@@ -100,7 +103,7 @@ export async function checkForMatch(currentUserId: string, targetUserId: string)
     if (swipeDoc.exists() && swipeDoc.data().direction === "like") {
       // Get target user's name for the notification
       const targetUserName = await getUserName(targetUserId);
-      
+
       // It's a match! Create match document
       const { matchId, isNew } = await createMatch(currentUserId, targetUserId);
 
@@ -115,14 +118,15 @@ export async function checkForMatch(currentUserId: string, targetUserId: string)
     console.error("Error checking for match:", error);
     return { isMatch: false, matchedUserName: null };
   }
-}
+};
 
 export async function getUserMatches(userId: string) {
   // Check that user has matches
   const userProfileRef = doc(db, "Profiles", userId);
   const userProfileDoc = await getDoc(userProfileRef);
 
-  if (!userProfileDoc.exists() || userProfileDoc.data()?.matchedUsers.length === 0) {
+  // TODO: IF NO MATCHES RETURN EMPTY ARRAY
+  if (!userProfileDoc.exists()) {
     return [];
   }
 

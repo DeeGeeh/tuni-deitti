@@ -1,19 +1,162 @@
+// firebaseUtils.ts
 import {
-  collection,
-  getDocs,
-  doc,
-  getDoc,
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+  UserCredential,
+} from "firebase/auth";
+import {
   setDoc,
-  updateDoc,
-  query,
-  where,
+  doc,
   Timestamp,
-  addDoc,
-  deleteDoc,
+  getDoc,
+  updateDoc,
+  getDocs,
+  collection,
   serverTimestamp,
+  addDoc,
 } from "firebase/firestore";
-import { db } from "./firebase";
-import { getAuth } from "firebase/auth";
+import { db } from "@/app/lib/firebase";
+import { User } from "../types/schema";
+
+/**
+ * Creates a new user account with Firebase Authentication
+ *
+ * @param email - User's email address
+ * @param password - User's password
+ * @returns Promise resolving to Firebase UserCredential
+ */
+export const createAuthUser = async (
+  email: string,
+  password: string
+): Promise<UserCredential> => {
+  const auth = getAuth();
+  return createUserWithEmailAndPassword(auth, email, password);
+};
+
+/**
+ * Sends a verification email to the newly created user
+ *
+ * @param userCredential - Firebase UserCredential from createAuthUser
+ * @returns Promise resolving when email is sent
+ */
+export const sendVerificationEmail = async (
+  userCredential: UserCredential
+): Promise<void> => {
+  try {
+    await sendEmailVerification(userCredential.user);
+    console.log("Verification email sent");
+  } catch (error) {
+    console.error("Failed to send verification email:", error);
+    // Non-critical error, doesn't throw
+  }
+};
+
+/**
+ * Creates or updates a user profile in Firestore
+ *
+ * @param userData - User data to be stored in Firestore
+ * @returns Promise resolving when the operation completes
+ */
+export const updateUserWithData = async (userData: User): Promise<void> => {
+  if (!userData?.uid) {
+    throw new Error("User ID is required for database operations");
+  }
+
+  try {
+    const userRef = doc(db, "Profiles", userData.uid);
+    await setDoc(userRef, userData, { merge: true });
+  } catch (error) {
+    console.error(`Error updating user ${userData.uid}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Sets a session cookie in the browser
+ *
+ * @param userCredential - Firebase UserCredential from which to get token
+ * @returns Promise resolving when cookie is set
+ */
+export const setSessionCookie = async (
+  userCredential: UserCredential
+): Promise<void> => {
+  const token = await userCredential.user.getIdToken();
+  document.cookie = `session=${token}; path=/; max-age=604800; secure; samesite=strict`;
+};
+
+/**
+ * Creates a complete user profile object from authentication and form data
+ *
+ * @param userCredential - Firebase UserCredential containing auth user data
+ * @param firstName - User's first name
+ * @param lastName - User's last name
+ * @returns Complete User object ready for database storage
+ */
+export const createUserProfile = async (
+  userCredential: UserCredential,
+  firstName: string,
+  lastName: string
+): Promise<User> => {
+  return {
+    uid: userCredential.user.uid,
+    displayName: `${firstName} ${lastName}`,
+    email: userCredential.user.email || "",
+    birthDate: Timestamp.now(), // Placeholder
+    gender: "", // Placeholder
+    guild: "", // Placeholder
+    interests: [], // Placeholder
+    photos: [], // Placeholder
+    bio: "", // Placeholder
+    lastActive: Timestamp.now(),
+  };
+};
+
+/**
+ * Complete user registration flow
+ *
+ * Handles auth creation, profile storage, verification email, and session setup
+ *
+ * @param email - User's email address
+ * @param password - User's password
+ * @param firstName - User's first name
+ * @param lastName - User's last name
+ * @returns Promise resolving to the UserCredential and created user profile
+ */
+export const registerUser = async (
+  email: string,
+  password: string,
+  firstName: string,
+  lastName: string
+): Promise<{ userCredential: UserCredential; userProfile: User }> => {
+  try {
+    // Step 1: Create the auth user
+    const userCredential = await createAuthUser(email, password);
+
+    // Step 2: Create and save the user profile
+    const userProfile = await createUserProfile(
+      userCredential,
+      firstName,
+      lastName
+    );
+    await updateUserWithData(userProfile);
+
+    // Step 3: Send verification email (non-blocking)
+    sendVerificationEmail(userCredential).catch((error) =>
+      console.error("Failed to send verification email:", error)
+    );
+
+    // Step 4: Set the session cookie
+    await setSessionCookie(userCredential);
+
+    // Return both the UserCredential and the created user profile
+    return { userCredential, userProfile };
+  } catch (error) {
+    console.error("Error during user registration:", error);
+    throw error; // Re-throw the error for the caller to handle
+  }
+};
 
 // User Profile Operations
 export const getUserProfile = async (userId: string) => {
@@ -173,7 +316,10 @@ export const getMatches = async () => {
 };
 
 // Message Operations
-export const sendMessage = async (recipientId: string, message: string) => {
+export const sendMessage = async (
+  recipientId: string,
+  message: string
+): Promise<boolean> => {
   try {
     const auth = getAuth();
     const currentUser = auth.currentUser;

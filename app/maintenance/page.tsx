@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-const maintenanceMode = false; // Set this to `false` to disable maintenance mode
+const maintenanceMode = true; // Set this to `false` to disable maintenance mode
 
 export default function MaintenancePage() {
   if (!maintenanceMode) {
