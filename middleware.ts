@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 export function middleware(req: NextRequest) {
   // Set to true when site is under maintenance
   // I'll figure out a better way of doing this later....
-  const maintenanceMode = true;
+  const maintenanceMode = false;
 
   if (maintenanceMode && !req.nextUrl.pathname.startsWith("/maintenance")) {
     console.log("Page is under maintanance.");
