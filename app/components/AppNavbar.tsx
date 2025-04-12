@@ -1,18 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Bell, User, LogOut, Settings } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
 import { getAuth, signOut } from "firebase/auth";
+import { getUserName } from "../lib/swipeapp";
 
 export default function AppNavbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { user, loading } = useAuth();
+  const [userName, setUserName] = useState<string>("");
   const auth = getAuth();
+  const currentUser = auth.currentUser;
   const router = useRouter();
+
+  // Fetch user name when component mounts or user changes
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (currentUser?.uid) {
+        const name = await getUserName(currentUser.uid);
+        setUserName(name);
+      }
+    };
+    
+    fetchUserName();
+  }, [currentUser]);
 
   // Sign out the user
   const handleLogout = async () => {
@@ -118,10 +131,10 @@ export default function AppNavbar() {
             <div className="border-t border-gray-200 pt-4 pb-3">
               <div className="px-4">
                 <div className="text-base font-medium text-gray-800">
-                  {user?.displayName || "Käyttäjä"}
+                  {userName || "Käyttäjä"}
                 </div>
                 <div className="text-sm font-medium text-gray-500">
-                  {user?.email || "Sähköposti"}
+                  {auth.currentUser?.email || " "}
                 </div>
               </div>
               <div className="mt-3 space-y-1">

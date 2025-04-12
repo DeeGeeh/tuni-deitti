@@ -2,10 +2,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
-import { db } from "@/app/lib/firebase";
 import { getAuth } from "firebase/auth";
 import SwipeableCard from "@/app/components/Profilecard";
+import { getUsersToSwipe } from "@/app/lib/firebaseUtils";
 
 export default function SwipePage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -15,30 +14,7 @@ export default function SwipePage() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
-          console.error("No user logged in");
-          return;
-        }
-
-        // First, get the current user's profile to check their matches
-        const currentUserProfile = await getDoc(doc(db, "Profiles", currentUser.uid));
-        const matchedUsers = currentUserProfile.data()?.matchedUsers || [];
-
-        // Get all profiles
-        const querySnapshot = await getDocs(collection(db, "Profiles"));
-        const userData = querySnapshot.docs
-          .map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }))
-          .filter((user) => {
-            return (
-              user.id !== currentUser.uid && // Exclude current user
-              !matchedUsers.includes(user.id) // Exclude matched users
-            );
-          });
-
+        const userData = await getUsersToSwipe();
         setUsers(userData);
       } catch (error) {
         console.error("Error fetching users:", error);

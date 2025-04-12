@@ -6,6 +6,7 @@ import { Timestamp } from "firebase/firestore";
 interface User {
   uid: string;
   displayName: string | null;
+  email: string;
   birthDate: Timestamp;
   gender: string;
   guild: string;

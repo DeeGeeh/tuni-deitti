@@ -5,14 +5,11 @@ import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import AppNavbar from "../components/AppNavbar";
 import AppFooter from "../components/AppFooter";
-import { getAuth } from "firebase/auth";
 import ProtectedRoute from "../components/ProtectedRoute";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const firebaseUser = getAuth().currentUser;
 
   // Close mobile menu when route changes
   useEffect(() => {

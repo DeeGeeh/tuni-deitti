@@ -20,6 +20,33 @@ interface Match {
   active: boolean;
 }
 
+// Store a swipe action
+export async function storeSwipe(
+  currentUserId: string,
+  targetUserId: string,
+  direction: "like" | "dislike"
+): Promise<{ isMatch: boolean; matchedUserName: string | null }> {
+  try {
+    // Store the swipe in Firestore
+    const swipeRef = doc(db, "swipes", currentUserId, "swiped", targetUserId);
+    await setDoc(swipeRef, {
+      direction,
+      timestamp: new Date(),
+      targetUserId, // Add this to help with security rules
+    });
+
+    // If it's a like, check for a match
+    if (direction === "like") {
+      return checkForMatch(currentUserId, targetUserId);
+    }
+
+    return { isMatch: false, matchedUserName: null };
+  } catch (error) {
+    console.error("Error storing swipe:", error);
+    return { isMatch: false, matchedUserName: null };
+  }
+}
+
 // Helper function for consistent match IDs
 function createMatchId(userId1: string, userId2: string) {
   const sortedIds = [userId1, userId2].sort();
@@ -33,7 +60,6 @@ export async function createMatch(userId1: string, userId2: string) {
   // Check if this match already exists
   const matchRef = doc(db, "matches", matchId);
   const matchDoc = await getDoc(matchRef);
-
 
   if (!matchDoc.exists()) {
     // Create new match document
@@ -52,7 +78,7 @@ export async function createMatch(userId1: string, userId2: string) {
       matchedUsers: arrayUnion(userId2),
     });
 
-    // Optionally, add userId1 to userId2's matchedUsers array
+    // Add userId1 to userId2's matchedUsers array
     const user2ProfileRef = doc(db, "Profiles", userId2);
     await updateDoc(user2ProfileRef, {
       matchedUsers: arrayUnion(userId1),
@@ -64,34 +90,43 @@ export async function createMatch(userId1: string, userId2: string) {
   return { matchId, isNew: false };
 }
 
-export async function checkForMatch(
+// Check if there's a mutual match
+export const checkForMatch = async (
   currentUserId: string,
   targetUserId: string
-) {
-  // First check if the target user has already swiped right on current user
-  const swipeRef = doc(db, "swipes", targetUserId, "swiped", currentUserId);
-  const swipeDoc = await getDoc(swipeRef);
+) => {
+  try {
+    // Check if the target user has already swiped right on current user
+    const swipeRef = doc(db, "swipes", targetUserId, "swiped", currentUserId);
+    const swipeDoc = await getDoc(swipeRef);
 
-  if (swipeDoc.exists() && swipeDoc.data().direction === "like") {
-    // It's a match! Create match document
-    const { matchId, isNew } = await createMatch(currentUserId, targetUserId);
+    if (swipeDoc.exists() && swipeDoc.data().direction === "like") {
+      // Get target user's name for the notification
+      const targetUserName = await getUserName(targetUserId);
 
-    if (isNew) {
-      // TODO:
-      // Potentially send notification, update UI, etc.
+      // It's a match! Create match document
+      const { matchId, isNew } = await createMatch(currentUserId, targetUserId);
+
+      if (isNew) {
+        return { isMatch: true, matchedUserName: targetUserName };
+      }
+      return { isMatch: true, matchedUserName: targetUserName };
     }
-    return true;
-  }
 
-  return false;
-}
+    return { isMatch: false, matchedUserName: null };
+  } catch (error) {
+    console.error("Error checking for match:", error);
+    return { isMatch: false, matchedUserName: null };
+  }
+};
 
 export async function getUserMatches(userId: string) {
   // Check that user has matches
   const userProfileRef = doc(db, "Profiles", userId);
   const userProfileDoc = await getDoc(userProfileRef);
 
-  if (!userProfileDoc.exists() || userProfileDoc.data()?.matchedUsers.length === 0) {
+  // TODO: IF NO MATCHES RETURN EMPTY ARRAY
+  if (!userProfileDoc.exists()) {
     return [];
   }
 
@@ -119,4 +154,17 @@ export async function getUserMatches(userId: string) {
   });
 
   return matches;
+}
+
+export async function getUserName(userId: string): Promise<string> {
+  try {
+    const userDoc = await getDoc(doc(db, "Profiles", userId));
+    if (userDoc.exists()) {
+      return userDoc.data().displayName || "Unknown User";
+    }
+    return "Unknown User";
+  } catch (error) {
+    console.error("Error fetching user name:", error);
+    return "Unknown User";
+  }
 }

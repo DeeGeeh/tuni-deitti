@@ -11,6 +11,7 @@ import {
 } from "firebase/auth";
 import { auth } from "@/app/lib/firebase";
 import Link from "next/link";
+import { setSessionCookie } from "../lib/firebaseUtils";
 
 export default function LoginPage() {
   const [email, setEmail] = useState<string>("");
@@ -44,10 +45,8 @@ export default function LoginPage() {
         email,
         password
       );
-      const token = await userCredential.user.getIdToken();
 
-      // Set the session cookie
-      document.cookie = `session=${token}; path=/; max-age=604800; secure; samesite=strict`;
+      await setSessionCookie(userCredential);
 
       // Redirect to the desired page (or default to /swipe)
       const redirectTo =

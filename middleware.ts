@@ -5,13 +5,13 @@ export function middleware(req: NextRequest) {
   // Set to true when site is under maintenance
   // I'll figure out a better way of doing this later....
   const maintenanceMode = true;
+  const path = req.nextUrl.pathname;
 
-  if (maintenanceMode && !req.nextUrl.pathname.startsWith("/maintenance")) {
-    console.log("Page is under maintanance.");
+  // Allow access to '/' even in maintenance mode
+  if (maintenanceMode && path !== "/" && !path.startsWith("/maintenance")) {
+    console.log("Page is under maintenance.");
     return NextResponse.redirect(new URL("/maintenance", req.url));
   }
-
-  const path = req.nextUrl.pathname;
 
   // Define which paths are protected
   const protectedPaths = ["/matches", "/profile", "/settings", "/swipe"];
