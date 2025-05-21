@@ -60,15 +60,14 @@ export default function SignUpPage() {
       confirmPassword: form.confirmPassword,
     });
 
-    if (!validation.isValid) {
+    if (validation.isValid) {
+      setForm((prev) => ({
+        ...prev,
+        step: prev.step + 1,
+      }));
+    } else {
       setError(validation.errorMessage || "Validointi epäonnistui");
-      return;
     }
-
-    setForm((prev) => ({
-      ...prev,
-      step: prev.step + 1,
-    }));
   };
 
   const handleStepTwo = async (e: FormEvent<HTMLFormElement>) => {
