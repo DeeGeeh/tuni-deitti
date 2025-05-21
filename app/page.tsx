@@ -25,8 +25,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-100 to-white">
-      {/* Navigation */}
-      <Navbar></Navbar>
       {/* Hero Section */}
       <div className="pt-32 pb-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
