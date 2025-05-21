@@ -1,27 +1,10 @@
 // LANDING PAGE
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Navbar from "./components/Navbar";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "@/app/lib/firebase";
 
 export default function Home() {
   const router = useRouter();
-  useEffect(() => {
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // User is signed in, see docs for a list of available properties
-        // https://firebase.google.com/docs/reference/js/firebase.User
-        const uid = user.uid;
-        console.log("uid", uid);
-      } else {
-        // User is signed out
-        console.log("user is logged out");
-      }
-    });
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-100 to-white">
