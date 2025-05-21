@@ -1,7 +1,7 @@
 // app/login/page.tsx
 "use client";
 
-import React, { useState, FormEvent } from "react";
+import React, { useState, FormEvent, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   signInWithEmailAndPassword,
@@ -13,19 +13,35 @@ import { auth } from "@/app/lib/firebase";
 import Link from "next/link";
 import { setSessionCookie } from "../lib/firebaseUtils";
 
+interface loginForm {
+  email: string;
+  password: string;
+  rememberMe: boolean;
+}
+
 export default function LoginPage() {
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [rememberMe, setRememberMe] = useState<boolean>(false);
+  const [form, setForm] = useState<loginForm>({
+    email: "",
+    password: "",
+    rememberMe: false,
+  });
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
 
-    if (!email || !password) {
+    if (!form.email || !form.password) {
       setError("Ole hyvä ja täytä kaikki kentät");
       return;
     }
@@ -34,7 +50,7 @@ export default function LoginPage() {
       setIsLoading(true);
 
       // Set Firebase Authentication persistence based on "Remember Me"
-      const persistence = rememberMe
+      const persistence = form.rememberMe
         ? browserLocalPersistence
         : browserSessionPersistence;
       await setPersistence(auth, persistence);
@@ -42,8 +58,8 @@ export default function LoginPage() {
       // Sign in with Firebase Authentication
       const userCredential = await signInWithEmailAndPassword(
         auth,
-        email,
-        password
+        form.email,
+        form.password
       );
 
       await setSessionCookie(userCredential);
@@ -88,8 +104,8 @@ export default function LoginPage() {
               required
               className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-tuni-blue focus:ring focus:ring-tuni-blue/20"
               placeholder="email@tuni.fi"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={form.email}
+              onChange={handleInputChange}
             />
           </div>
 
@@ -107,23 +123,23 @@ export default function LoginPage() {
               required
               className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-tuni-blue focus:ring focus:ring-tuni-blue/20"
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={form.password}
+              onChange={handleInputChange}
             />
           </div>
 
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <input
-                id="remember-me"
-                name="remember-me"
+                id="rememberMe"
+                name="rememberMe"
                 type="checkbox"
                 className="h-4 w-4 rounded border-gray-300 text-tuni-blue focus:ring-tuni-blue"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
+                checked={form.rememberMe}
+                onChange={handleInputChange}
               />
               <label
-                htmlFor="remember-me"
+                htmlFor="rememberMe"
                 className="ml-2 block text-sm text-foreground"
               >
                 Muista minut
