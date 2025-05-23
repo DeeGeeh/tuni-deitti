@@ -2,42 +2,47 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
-  // Set to true when site is under maintenance
-  // I'll figure out a better way of doing this later....
-  const maintenanceMode = true;
   const path = req.nextUrl.pathname;
 
-  // Allow access to '/' even in maintenance mode
-  if (maintenanceMode && path !== "/" && !path.startsWith("/maintenance")) {
-    console.log("Page is under maintenance.");
-    return NextResponse.redirect(new URL("/maintenance", req.url));
-  }
+  const maintenanceMode = true; // NOTE TO SELF: THIS IS STUPID, BUT WORKS FOR NOW
 
-  // Define which paths are protected
-  const protectedPaths = ["/matches", "/profile", "/settings", "/swipe"];
-  const isPathProtected = protectedPaths.some((protectedPath) =>
-    path.startsWith(protectedPath)
-  );
+  // Early exits for assets and API routes
+  const shouldSkip =
+    path.startsWith("/_next/") ||
+    path.startsWith("/favicon.ico") ||
+    path.includes(".") ||
+    (maintenanceMode &&
+      (path.startsWith("/api/notify-email") ||
+        path.startsWith("/api/construction-admin-auth")));
 
-  // If the path is not protected, allow the request
-  if (!isPathProtected) {
+  if (shouldSkip) {
     return NextResponse.next();
   }
 
-  // Check for the session cookie
-  const session = req.cookies.get("session")?.value;
+  // Check authentication states
+  const isAdmin = req.cookies.get("admin-authenticated")?.value === "true";
+  const hasSession = !!req.cookies.get("session")?.value;
 
-  // If there's no session, redirect to login
-  if (!session) {
-    const url = new URL("/login", req.url);
-    url.searchParams.set("redirect", path);
-    return NextResponse.redirect(url);
+  // Maintenance mode
+  if (maintenanceMode && !isAdmin) {
+    return path === "/construction"
+      ? NextResponse.next()
+      : NextResponse.redirect(new URL("/construction", req.url));
+  }
+
+  // Protected paths logic (only runs if not in maintenance)
+  const protectedPaths = ["/matches", "/profile", "/settings", "/swipe"];
+  const isProtected = protectedPaths.some((p) => path.startsWith(p));
+
+  if (isProtected && !hasSession) {
+    const loginUrl = new URL("/login", req.url);
+    loginUrl.searchParams.set("redirect", path);
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
 }
 
-// Config the middleware to run on specific paths
 export const config = {
-  matcher: ["/swipe/:path*", "/profile/:path*", "/settings/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
