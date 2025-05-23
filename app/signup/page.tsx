@@ -88,7 +88,7 @@ export default function SignUpPage() {
       setTimeout(() => {
         const redirectTo =
           new URLSearchParams(window.location.search).get("redirect") ||
-          "/swipe";
+          "/profile";
         router.push(redirectTo);
       }, 2000);
     } catch (error: any) {
