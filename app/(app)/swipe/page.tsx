@@ -2,14 +2,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAuth } from "firebase/auth";
 import SwipeableCard from "@/app/components/Profilecard";
 import { getUsersToSwipe } from "@/app/lib/firebaseUtils";
+import { User } from "@/app/types/schema";
 
 export default function SwipePage() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const auth = getAuth();
 
   useEffect(() => {
     const fetchUsers = async () => {
