@@ -11,9 +11,11 @@ interface User {
   gender: string;
   guild: string;
   interests: string[];
-  photos: { url: string; order: number }[];
+  questions?: string[];
+  photos: Photo[];
   bio: string;
   lastActive: Timestamp;
+  isActive: boolean; // this decides if profile is shown to others
 }
 
 interface UserPreferences {
@@ -52,4 +54,26 @@ interface Message {
   read: boolean;
 }
 
-export type { User, UserPreferences, Swipe, Conversation, Message };
+interface Photo {
+  id: string;
+  storageUrl: string;
+  downloadUrl: string;
+  order: number;
+  uploadedAt: Timestamp;
+  isProfilePhoto: boolean;
+}
+
+type PhotoInput = Omit<
+  Photo,
+  "id" | "storageUrl" | "downloadUrl" | "uploadedAt"
+>;
+
+export type {
+  User,
+  UserPreferences,
+  Swipe,
+  Conversation,
+  Message,
+  Photo,
+  PhotoInput,
+};

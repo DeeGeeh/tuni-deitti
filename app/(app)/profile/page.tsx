@@ -4,13 +4,15 @@ import React, { useState, FormEvent, useEffect } from "react";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/contexts/AuthContext";
-import ImageManager, { ProfileImage } from "@/app/components/ImageManager";
+import ImageManager from "@/app/components/ImageManager";
+import { Photo } from "@/app/types/schema";
 
 interface ProfileData {
   displayName: string;
   age: string;
   guild: string;
   interestedEvents: string;
+  photos: Photo[];
 }
 
 export default function ProfilePage() {
@@ -20,6 +22,7 @@ export default function ProfilePage() {
     age: "",
     guild: "",
     interestedEvents: "",
+    photos: [],
   });
   const [originalData, setOriginalData] = useState<ProfileData>(formData);
 
@@ -28,7 +31,7 @@ export default function ProfilePage() {
   >("loading");
 
   // Image management state
-  const [images, setImages] = useState<ProfileImage[]>([]);
+  const [images, setImages] = useState<Photo[]>([]);
 
   // Fetch user data from Firestore
   useEffect(() => {
@@ -47,11 +50,13 @@ export default function ProfilePage() {
             age: userData.age || "",
             guild: userData.guild || "",
             interestedEvents: userData.interestedEvents || "",
+            photos: userData.photos || [],
           };
 
           // Store original data for comparison
           setOriginalData(profileData);
           setFormData(profileData);
+          setImages(profileData.photos);
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -103,7 +108,7 @@ export default function ProfilePage() {
     };
 
   // Handle image changes from ImageManager
-  const handleImagesChange = (updatedImages: ProfileImage[]) => {
+  const handleImagesChange = (updatedImages: Photo[]) => {
     setImages(updatedImages);
   };
 
