@@ -5,7 +5,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/contexts/AuthContext";
 import ImageManager from "@/app/components/ImageManager";
-import { Photo } from "@/app/types/schema";
+import { User, Photo } from "@/app/types/schema";
 
 interface ProfileData {
   displayName: string;
@@ -13,6 +13,7 @@ interface ProfileData {
   guild: string;
   interestedEvents: string;
   photos: Photo[];
+  isActive: boolean;
 }
 
 export default function ProfilePage() {
@@ -23,6 +24,7 @@ export default function ProfilePage() {
     guild: "",
     interestedEvents: "",
     photos: [],
+    isActive: false,
   });
   const [originalData, setOriginalData] = useState<ProfileData>(formData);
 
@@ -51,6 +53,7 @@ export default function ProfilePage() {
             guild: userData.guild || "",
             interestedEvents: userData.interestedEvents || "",
             photos: userData.photos || [],
+            isActive: userData.isActive || false,
           };
 
           // Store original data for comparison
@@ -109,6 +112,10 @@ export default function ProfilePage() {
 
   // Handle image changes from ImageManager
   const handleImagesChange = (updatedImages: Photo[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      photos: updatedImages,
+    }));
     setImages(updatedImages);
   };
 
@@ -220,6 +227,23 @@ export default function ProfilePage() {
               onChange={handleChange("interestedEvents")}
             />
           </div>
+          <label className="inline-flex items-center cursor-pointer">
+            <span className="mr-3 text-sm font-medium text-foreground">
+              Profiili näkyvissä muille
+            </span>
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={formData.isActive}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  isActive: e.target.checked,
+                }))
+              }
+            />
+            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+          </label>
           <div>
             <button
               type="submit"
