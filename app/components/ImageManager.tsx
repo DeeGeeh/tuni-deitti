@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { uploadProfileImage, removeProfileImage } from "../lib/firebaseUtils";
 import { Photo } from "../types/schema";
 import { serverTimestamp, Timestamp } from "firebase/firestore";
+import Image from "next/image";
 
 interface ImageManagerProps {
   images: Photo[];
@@ -121,10 +122,15 @@ export default function ImageManager({
                 draggedIndex === index ? "opacity-50" : ""
               } hover:border-tuni-blue transition-colors`}
             >
-              <img
+              <Image
                 src={image.downloadUrl}
                 alt={`Profile ${index + 1}`}
+                width={300}
+                height={300}
                 className="w-full h-full object-cover"
+                sizes="(max-width: 768px) 50vw, 25vw"
+                quality={25}
+                loading="eager"
               />
 
               {/* Order indicator */}
