@@ -4,6 +4,7 @@ import React, { useState, FormEvent, useEffect } from "react";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/contexts/AuthContext";
+import ImageManager, { ProfileImage } from "@/app/components/ImageManager";
 
 interface ProfileData {
   displayName: string;
@@ -25,6 +26,9 @@ export default function ProfilePage() {
   const [status, setStatus] = useState<
     "loading" | "idle" | "saving" | "success"
   >("loading");
+
+  // Image management state
+  const [images, setImages] = useState<ProfileImage[]>([]);
 
   // Fetch user data from Firestore
   useEffect(() => {
@@ -64,21 +68,22 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("submitting");
     if (!user || !hasChanges) return;
 
     try {
       setStatus("saving");
-
+      console.log("updating doc");
       // Update user profile in Firestore
       await updateDoc(doc(db, "Profiles", user.uid), {
         ...formData,
         updatedAt: new Date(),
       });
-
+      console.log("updated doc");
       // Update original data to match new values
       setOriginalData(formData);
       setStatus("success");
-
+      console.log("set original data");
       // Hide success message after 3 seconds
       setTimeout(() => {
         setStatus("idle");
@@ -96,6 +101,11 @@ export default function ProfilePage() {
         [field]: e.target.value,
       }));
     };
+
+  // Handle image changes from ImageManager
+  const handleImagesChange = (updatedImages: ProfileImage[]) => {
+    setImages(updatedImages);
+  };
 
   if (status === "loading") {
     return (
@@ -126,6 +136,13 @@ export default function ProfilePage() {
         )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {/* Image Upload Section */}
+          <ImageManager
+            images={images}
+            onImagesChange={handleImagesChange}
+            userId={user?.uid || ""}
+          />
+
           <div>
             <label
               htmlFor="name"
@@ -134,9 +151,10 @@ export default function ProfilePage() {
               Nimi
             </label>
             <input
-              id="nimi"
-              name="nimi"
+              id="name"
+              name="name"
               type="text"
+              autoComplete="on"
               required
               className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-tuni-blue focus:ring focus:ring-tuni-blue/20"
               placeholder="Teemu Teekkari"
@@ -152,8 +170,8 @@ export default function ProfilePage() {
               Ikä
             </label>
             <input
-              id="ikä"
-              name="ikä"
+              id="age"
+              name="age"
               type="number"
               required
               className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-tuni-blue focus:ring focus:ring-tuni-blue/20"
@@ -170,8 +188,8 @@ export default function ProfilePage() {
               Kilta tai Ainejärjestö
             </label>
             <input
-              id="kilta"
-              name="kilta"
+              id="guild"
+              name="quild"
               type="text"
               required
               className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-tuni-blue focus:ring focus:ring-tuni-blue/20"
@@ -188,8 +206,8 @@ export default function ProfilePage() {
               Tapahtumat
             </label>
             <input
-              id="tapahtumat"
-              name="tapahtumat"
+              id="interestedEvents"
+              name="interestedEvents"
               type="text"
               className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-tuni-blue focus:ring focus:ring-tuni-blue/20"
               placeholder="Listaa tapahtumat joihin menet"
