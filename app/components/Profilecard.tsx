@@ -3,21 +3,23 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { Heart, X } from "lucide-react";
-import { createMatch, storeSwipe } from "@/app/lib/swipeapp";
-import { useAuth } from "@/app/contexts/AuthContext";
+import { storeSwipe } from "@/app/lib/swipeapp";
 import { User } from "../types/schema";
 
-const SwipeableCard = ({ profiles }: { profiles: User[] }) => {
+interface SwipeableCardProps {
+  profiles: User[];
+  userProfile: User | null;
+}
+
+const SwipeableCard = ({ profiles, userProfile }: SwipeableCardProps) => {
   const [startX, setStartX] = useState(0);
   const [offsetX, setOffsetX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
 
-  const currentUserID = useAuth().user?.uid;
-
   // THIS SHOULD NEVER HAPPEN
-  if (!currentUserID) {
-    throw new Error("No current user found");
+  if (!userProfile) {
+    return <div>Loading profile...</div>;
   }
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -52,15 +54,16 @@ const SwipeableCard = ({ profiles }: { profiles: User[] }) => {
     setOffsetX(0);
   };
 
-  const currentProfile = profiles[currentProfileIndex];
-  console.log(currentProfile);
+  // This is kinda misleading, refers to the current swipeable user(card).
+  // Not the logged in user.
+  const currentProfile: User = profiles[currentProfileIndex];
 
   const handleSwipe = async (direction: string) => {
     if (currentProfileIndex < profiles.length - 1) {
       if (direction === "right") {
         console.log("Swiping right on", profiles[currentProfileIndex].uid);
         const { isMatch, matchedUserName } = await storeSwipe(
-          currentUserID,
+          userProfile.uid,
           profiles[currentProfileIndex].uid,
           "like"
         );
@@ -72,7 +75,7 @@ const SwipeableCard = ({ profiles }: { profiles: User[] }) => {
       } else {
         // Store dislike swipe
         await storeSwipe(
-          currentUserID,
+          userProfile.uid,
           profiles[currentProfileIndex].uid,
           "dislike"
         );
@@ -82,7 +85,7 @@ const SwipeableCard = ({ profiles }: { profiles: User[] }) => {
       // No more profiles, store the last swipe and refresh
       if (direction === "right") {
         const { isMatch, matchedUserName } = await storeSwipe(
-          currentUserID,
+          userProfile.uid,
           profiles[currentProfileIndex].uid,
           "like"
         );
@@ -91,7 +94,7 @@ const SwipeableCard = ({ profiles }: { profiles: User[] }) => {
         }
       } else {
         await storeSwipe(
-          currentUserID,
+          userProfile.uid,
           profiles[currentProfileIndex].uid,
           "dislike"
         );
@@ -108,6 +111,18 @@ const SwipeableCard = ({ profiles }: { profiles: User[] }) => {
       setOffsetX(0);
     }, 200);
   };
+
+  if (userProfile && userProfile.isActive === false) {
+    return (
+      <div className="w-full max-w-sm mx-auto h-screen flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">
+            Laita tilisi näkyväksi muille päästäksesti swaippaamaan!
+          </h3>
+        </div>
+      </div>
+    );
+  }
 
   if (currentProfileIndex >= profiles.length) {
     return (
