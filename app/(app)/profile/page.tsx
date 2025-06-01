@@ -5,7 +5,7 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/contexts/AuthContext";
 import ImageManager from "@/app/components/ImageManager";
-import { User, Photo } from "@/app/types/schema";
+import { Status, Photo } from "@/app/types/schema";
 
 interface ProfileData {
   displayName: string;
@@ -27,13 +27,27 @@ export default function ProfilePage() {
     isActive: false,
   });
   const [originalData, setOriginalData] = useState<ProfileData>(formData);
-
-  const [status, setStatus] = useState<
-    "loading" | "idle" | "saving" | "success"
-  >("loading");
-
-  // Image management state
+  const [status, setStatus] = useState<Status>(Status.Loading);
   const [images, setImages] = useState<Photo[]>([]);
+
+  const isProfileComplete = () => {
+    return (
+      formData.displayName.trim() !== "" &&
+      formData.age.trim() !== "" &&
+      formData.guild.trim() !== "" &&
+      formData.photos.length > 0 // Require at least one photo
+    );
+  };
+
+  // Auto-disable isActive when profile becomes incomplete
+  useEffect(() => {
+    if (!isProfileComplete() && formData.isActive) {
+      setFormData((prev) => ({
+        ...prev,
+        isActive: false,
+      }));
+    }
+  }, [formData.displayName, formData.age, formData.guild, formData.photos]);
 
   // Fetch user data from Firestore
   useEffect(() => {
@@ -41,7 +55,7 @@ export default function ProfilePage() {
       if (!user) return;
 
       try {
-        setStatus("loading");
+        setStatus(Status.Loading);
         const userDoc = await getDoc(doc(db, "Profiles", user.uid));
 
         if (userDoc.exists()) {
@@ -64,7 +78,7 @@ export default function ProfilePage() {
       } catch (error) {
         console.error("Error fetching user data:", error);
       } finally {
-        setStatus("idle");
+        setStatus(Status.Idle);
       }
     };
 
@@ -80,7 +94,7 @@ export default function ProfilePage() {
     if (!user || !hasChanges) return;
 
     try {
-      setStatus("saving");
+      setStatus(Status.Saving);
       console.log("updating doc");
       // Update user profile in Firestore
       await updateDoc(doc(db, "Profiles", user.uid), {
@@ -90,15 +104,15 @@ export default function ProfilePage() {
       console.log("updated doc");
       // Update original data to match new values
       setOriginalData(formData);
-      setStatus("success");
+      setStatus(Status.Success);
       console.log("set original data");
       // Hide success message after 3 seconds
       setTimeout(() => {
-        setStatus("idle");
+        setStatus(Status.Idle);
       }, 3000);
     } catch (error) {
       console.error("Error updating profile:", error);
-      setStatus("idle");
+      setStatus(Status.Idle);
     }
   };
 
@@ -119,7 +133,7 @@ export default function ProfilePage() {
     setImages(updatedImages);
   };
 
-  if (status === "loading") {
+  if (status === Status.Loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
@@ -136,7 +150,7 @@ export default function ProfilePage() {
           <h1 className="text-3xl font-bold text-tuni-blue">PROFIILI</h1>
         </div>
 
-        {status === "success" && (
+        {status === Status.Success && (
           <div
             className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative"
             role="alert"
@@ -235,22 +249,38 @@ export default function ProfilePage() {
               type="checkbox"
               className="sr-only peer"
               checked={formData.isActive}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  isActive: e.target.checked,
-                }))
-              }
+              disabled={!isProfileComplete()}
+              onChange={(e) => {
+                if (isProfileComplete()) {
+                  setFormData((prev) => ({
+                    ...prev,
+                    isActive: e.target.checked,
+                  }));
+                }
+              }}
             />
-            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+            <div
+              className={`relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600 ${
+                !isProfileComplete() ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            ></div>
           </label>
+
+          {/* helper text */}
+          {!isProfileComplete() && (
+            <p className="text-sm text-red-600 mt-1">
+              Täydennä kaikki pakolliset kentät ja lisää vähintään yksi kuva
+              aktivoidaksesi profiilin.
+            </p>
+          )}
+
           <div>
             <button
               type="submit"
-              disabled={!hasChanges || status === "saving"}
+              disabled={!hasChanges || status === Status.Saving}
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-white bg-tuni-blue hover:bg-tuni-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tuni-blue disabled:opacity-50"
             >
-              {status === "saving" ? "Tallennetaan..." : "Tallenna"}
+              {status === Status.Saving ? "Tallennetaan..." : "Tallenna"}
             </button>
           </div>
         </form>
