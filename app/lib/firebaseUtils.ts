@@ -2,7 +2,6 @@
 import {
   getAuth,
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
   sendEmailVerification,
   UserCredential,
 } from "firebase/auth";
@@ -21,7 +20,7 @@ import {
   arrayUnion,
 } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
-import { User, Photo, PhotoInput } from "../types/schema";
+import { User, Photo } from "../types/schema";
 import {
   deleteObject,
   getDownloadURL,
@@ -29,7 +28,15 @@ import {
   ref,
   uploadBytes,
 } from "firebase/storage";
-import { storeSwipe } from "./swipeapp";
+
+const FIREBASE_AUTH_ERRORS = {
+  "auth/invalid-credential": "Virheellinen sähköposti tai salasana.",
+  "auth/user-disabled": "Tämä tili on poistettu käytöstä.",
+  "auth/too-many-requests":
+    "Liian monta epäonnistunutta yritystä. Yritä myöhemmin uudelleen.",
+  "auth/network-request-failed": "Verkkovirhe. Tarkista internetyhteytesi.",
+  "auth/invalid-email": "Virheellinen sähköpostiosoite.",
+} as const;
 
 /**
  * Creates a new user account with Firebase Authentication
@@ -561,3 +568,10 @@ export const getProfileImages = async (userId: string): Promise<Photo[]> => {
   const currentPictures = profileSnap.data()?.photos || [];
   return currentPictures;
 };
+
+export function getFirebaseAuthErrorMessage(errorCode: string): string {
+  return (
+    FIREBASE_AUTH_ERRORS[errorCode as keyof typeof FIREBASE_AUTH_ERRORS] ||
+    "Kirjautuminen epäonnistui. Yritä uudelleen."
+  );
+}

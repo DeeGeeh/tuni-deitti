@@ -12,6 +12,7 @@ import {
 import { auth } from "@/app/lib/firebase";
 import Link from "next/link";
 import { setSessionCookie } from "../lib/firebaseUtils";
+import { getFirebaseAuthErrorMessage } from "../lib/firebaseUtils";
 
 interface loginForm {
   email: string;
@@ -68,9 +69,15 @@ export default function LoginPage() {
       const redirectTo =
         new URLSearchParams(window.location.search).get("redirect") || "/swipe";
       router.push(redirectTo);
-    } catch (err: any) {
-      setError("Kirjautuminen epäonnistui. Tarkista sähköposti ja salasana.");
-      console.error(err);
+    } catch (e: any) {
+      console.log(`Failed with error code: ${e.code}`);
+      console.log(e.message);
+
+      const errorMessage = e.code?.startsWith("auth/")
+        ? getFirebaseAuthErrorMessage(e.code)
+        : "Kirjautuminen epäonnistui. Yritä uudelleen.";
+
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
