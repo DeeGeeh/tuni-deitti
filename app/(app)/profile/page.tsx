@@ -90,22 +90,18 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("submitting");
     if (!user || !hasChanges) return;
 
     try {
       setStatus(Status.Saving);
-      console.log("updating doc");
       // Update user profile in Firestore
       await updateDoc(doc(db, "Profiles", user.uid), {
         ...formData,
         updatedAt: new Date(),
       });
-      console.log("updated doc");
       // Update original data to match new values
       setOriginalData(formData);
       setStatus(Status.Success);
-      console.log("set original data");
       // Hide success message after 3 seconds
       setTimeout(() => {
         setStatus(Status.Idle);
