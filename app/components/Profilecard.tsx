@@ -116,7 +116,7 @@ const SwipeableCard = ({ profiles, userProfile }: SwipeableCardProps) => {
     return (
       <div className="w-full max-w-sm mx-auto h-screen flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">
+          <h3 className="text-xl font-bold mb-4 text-foreground">
             Laita tilisi näkyväksi muille päästäksesti swaippaamaan!
           </h3>
         </div>
