@@ -59,7 +59,7 @@ export interface Photo {
   storageUrl: string;
   downloadUrl: string;
   order: number;
-  uploadedAt: Timestamp;
+  uploadedAt: Date;
   isProfilePhoto: boolean;
 }
 

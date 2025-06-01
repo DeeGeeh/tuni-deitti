@@ -478,7 +478,7 @@ export const uploadProfileImage = async (
       storageUrl: `users/${userId}/images/${fileName}`,
       downloadUrl,
       order: currPhotos.length,
-      uploadedAt: Timestamp.now(),
+      uploadedAt: new Date(),
       isProfilePhoto: currPhotos.length === 0,
     };
 
