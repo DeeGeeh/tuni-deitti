@@ -178,11 +178,15 @@ export const registerUser = async (
 };
 
 // User Profile Operations
-export const getUserProfile = async (userId: string) => {
+export const getUserProfile = async (userId: string): Promise<User | null> => {
   try {
     const userDoc = await getDoc(doc(db, "Profiles", userId));
     if (userDoc.exists()) {
-      return { id: userDoc.id, ...userDoc.data() };
+      return {
+        uid: userDoc.id,
+        isActive: userDoc.data().isActive,
+        ...userDoc.data(),
+      } as User;
     }
     return null;
   } catch (error) {
@@ -190,7 +194,6 @@ export const getUserProfile = async (userId: string) => {
     throw error;
   }
 };
-
 export const updateUserProfile = async (userId: string, data: any) => {
   try {
     await updateDoc(doc(db, "Profiles", userId), data);
