@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { validateRegistrationForm } from "@/app/lib/auth/validation";
 import { registerUser } from "@/app/lib/firebaseUtils";
 import StepIndicator from "../components/StepIndicator";
+import { Status } from "../types/schema";
 
 interface SignUpForm {
   step: number;
@@ -29,8 +30,7 @@ export default function SignUpPage() {
   });
 
   const [error, setError] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isSuccess, setIsSuccess] = useState<boolean>(false);
+  const [status, setStatus] = useState<Status>(Status.Idle);
   const router = useRouter();
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -74,7 +74,7 @@ export default function SignUpPage() {
     e.preventDefault();
     setError("");
 
-    setIsLoading(true);
+    setStatus(Status.Loading);
 
     try {
       await registerUser(
@@ -83,7 +83,8 @@ export default function SignUpPage() {
         form.firstName,
         form.lastName
       );
-      setIsSuccess(true);
+
+      setStatus(Status.Success);
 
       setTimeout(() => {
         const redirectTo =
@@ -97,7 +98,7 @@ export default function SignUpPage() {
       setError(`Virhe ${errorCode}: ${errorMessage}`);
     }
 
-    setIsLoading(false);
+    setStatus(Status.Idle);
   };
 
   const handlePrevStep = () => {
@@ -192,7 +193,7 @@ export default function SignUpPage() {
         )}
 
         {/* STEP 2: Personal Info */}
-        {form.step === 2 && !isSuccess && (
+        {form.step === 2 && status !== Status.Success && (
           <form className="space-y-6" onSubmit={handleStepTwo}>
             <div>
               <label
@@ -264,17 +265,19 @@ export default function SignUpPage() {
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={status === Status.Loading}
                 className="px-4 py-2 bg-tuni-blue text-white rounded-md shadow-sm hover:bg-tuni-blue/90 disabled:opacity-50"
               >
-                {isLoading ? "Rekisteröidytään..." : "Rekisteröidy"}
+                {status === Status.Loading
+                  ? "Rekisteröidytään..."
+                  : "Rekisteröidy"}
               </button>
             </div>
           </form>
         )}
 
         {/* STEP 3: Success */}
-        {isSuccess && (
+        {status === Status.Success && (
           <div className="text-center p-4 bg-green-100 border border-green-400 text-green-700 rounded">
             Rekisteröityminen onnistui! Uudelleenohjataan...
           </div>
