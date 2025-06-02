@@ -131,6 +131,7 @@ export default function ImageManager({
                 sizes="(max-width: 768px) 50vw, 25vw"
                 quality={25}
                 loading="eager"
+                priority
               />
 
               {/* Order indicator */}
