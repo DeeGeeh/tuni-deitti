@@ -42,14 +42,14 @@ export interface Swipe {
   timestamp: Timestamp;
 }
 
-/* TODO GOTTA FIGURE THIS SHIT OUT  
-interface Match {
-  matchId: string;
-  users: string[]; // Array of two user IDs!!! Ex: id1__id2
-  timestamp: Timestamp;
-  active: boolean;
+export interface Match {
+  id: string;
+  name: string;
+  avatar: Photo;
+  lastActive: string;
+  unread: boolean;
+  lastMessage: string;
 }
-*/
 
 export interface Conversation {
   matchId: string;
