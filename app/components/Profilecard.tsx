@@ -138,21 +138,18 @@ const SwipeableCard = ({ profiles, userProfile }: SwipeableCardProps) => {
       </div>
     );
   }
-  <>
-    {/* Prefetch next two profile images */}
-    {profiles
-      .slice(currentProfileIndex + 1, currentProfileIndex + 3)
-      .map((profile, idx) => {
-        const url = profile.photos?.[0]?.downloadUrl;
-        return (
-          url && (
-            <link key={`preload-${idx}`} rel="preload" as="image" href={url} />
-          )
-        );
-      })}
-  </>;
+
   return (
     <div className="w-full max-w-sm mx-auto h-screen flex flex-col items-center justify-center">
+      {/* Preload next 2 profile images hidden */}
+      {profiles
+        .slice(currentProfileIndex + 1, currentProfileIndex + 3)
+        .map((p, i) => {
+          const url = p.photos?.[0]?.downloadUrl;
+          return url ? (
+            <img key={i} src={url} style={{ display: "none" }} alt="" />
+          ) : null;
+        })}
       <div
         className="relative w-102 h-170 min-w-80 min-h-96 rounded-xl shadow-lg overflow-hidden cursor-grab bg-white"
         style={{
