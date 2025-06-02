@@ -182,10 +182,11 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
   try {
     const userDoc = await getDoc(doc(db, "Profiles", userId));
     if (userDoc.exists()) {
+      const data = userDoc.data();
       return {
         uid: userDoc.id,
-        isActive: userDoc.data().isActive,
-        ...userDoc.data(),
+        isActive: data.isActive,
+        ...data,
       } as User;
     }
     return null;
@@ -194,6 +195,7 @@ export const getUserProfile = async (userId: string): Promise<User | null> => {
     throw error;
   }
 };
+
 export const updateUserProfile = async (userId: string, data: any) => {
   try {
     await updateDoc(doc(db, "Profiles", userId), data);
