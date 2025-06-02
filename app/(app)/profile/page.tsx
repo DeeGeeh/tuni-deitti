@@ -12,7 +12,13 @@ import { calculateAge } from "@/app/lib/dateUtils";
 interface ProfileData
   extends Pick<
     User,
-    "displayName" | "age" | "guild" | "interests" | "photos" | "isActive"
+    | "displayName"
+    | "age"
+    | "guild"
+    | "interests"
+    | "photos"
+    | "isActive"
+    | "bio"
   > {}
 
 export default function ProfilePage() {
@@ -23,6 +29,7 @@ export default function ProfilePage() {
     guild: "",
     interests: [],
     photos: [],
+    bio: "",
     isActive: false,
   });
   const [originalData, setOriginalData] = useState<ProfileData>(formData);
@@ -64,6 +71,7 @@ export default function ProfilePage() {
             guild: userData.guild || "",
             interests: userData.interests,
             photos: userData.photos || [],
+            bio: userData.bio || "",
             isActive: userData.isActive || false,
           };
 
@@ -221,9 +229,25 @@ export default function ProfilePage() {
               type="text"
               required
               className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-tuni-blue focus:ring focus:ring-tuni-blue/20"
-              placeholder="esim. Indecs"
+              placeholder=""
               value={formData.guild}
               onChange={handleChange("guild")}
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="bio"
+              className="block test-sm font-medium text-foreground"
+            >
+              Bio
+            </label>
+            <input
+              type="text"
+              id="bio"
+              name="bio"
+              className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-tuni-blue focus:ring focus:ring-tuni-blue/20"
+              value={formData.bio}
+              onChange={handleChange("bio")}
             />
           </div>
           <div>
