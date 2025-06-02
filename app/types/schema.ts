@@ -5,9 +5,10 @@ import { Timestamp } from "firebase/firestore";
 
 export interface User {
   uid: string;
-  displayName: string | null;
+  displayName: string;
   email: string;
-  birthDate: Timestamp;
+  birthDate: Date;
+  age?: number | null;
   gender: string;
   guild: string;
   interests: string[];
@@ -16,6 +17,17 @@ export interface User {
   bio: string;
   lastActive: Timestamp;
   isActive: boolean; // this decides if profile is shown to others
+}
+
+export interface SignUpForm {
+  step: number;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  firstName: string;
+  lastName: string;
+  birthdate: Date | "";
+  age: number;
 }
 
 export interface UserPreferences {

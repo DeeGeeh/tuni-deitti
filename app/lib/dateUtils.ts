@@ -50,7 +50,7 @@ export const formatLastActive = (timestamp: Timestamp | any): string => {
  * @example
  * calculateAge(new Date("2000-05-15")); // returns 24 (if current year is 2024 and date is after May 15)
  */
-const calculateAge = (birthdate: Date): number => {
+export const calculateAge = (birthdate: Date): number => {
   const today = new Date();
   const birthDate = new Date(birthdate);
   let age = today.getFullYear() - birthDate.getFullYear();

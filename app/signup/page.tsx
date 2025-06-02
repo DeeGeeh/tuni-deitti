@@ -5,18 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { validateRegistrationForm } from "@/app/lib/auth/validation";
 import { registerUser } from "@/app/lib/firebaseUtils";
+import { calculateAge } from "@/app/lib/dateUtils";
 import StepIndicator from "../components/StepIndicator";
-import { Status } from "../types/schema";
-
-interface SignUpForm {
-  step: number;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  firstName: string;
-  lastName: string;
-  birthdate: Date | null;
-}
+import { Status, SignUpForm } from "../types/schema";
 
 export default function SignUpPage() {
   const [form, setForm] = useState<SignUpForm>({
@@ -26,7 +17,8 @@ export default function SignUpPage() {
     confirmPassword: "",
     firstName: "",
     lastName: "",
-    birthdate: null,
+    birthdate: "",
+    age: 0,
   });
 
   const [error, setError] = useState<string>("");
@@ -37,7 +29,7 @@ export default function SignUpPage() {
     const { name, value, type } = e.target;
 
     if (type === "date" && name === "birthdate") {
-      const dateValue = value ? new Date(value) : null;
+      const dateValue = value ? new Date(value) : "";
       setForm((prev) => ({
         ...prev,
         birthdate: dateValue,
@@ -76,14 +68,20 @@ export default function SignUpPage() {
 
     setStatus(Status.Loading);
 
+    // Calculate age from birthdate
+    const calculatedAge = form.birthdate ? calculateAge(form.birthdate) : 0;
+    setForm((prev) => ({
+      ...prev,
+      age: calculatedAge,
+    }));
     try {
-      await registerUser(
-        form.email,
-        form.password,
-        form.firstName,
-        form.lastName
-      );
+      const formWithAge = {
+        ...form,
+        age: calculatedAge,
+      };
+      console.log(formWithAge);
 
+      await registerUser(formWithAge);
       setStatus(Status.Success);
 
       setTimeout(() => {

@@ -5,24 +5,23 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 import { useAuth } from "@/app/contexts/AuthContext";
 import ImageManager from "@/app/components/ImageManager";
-import { Status, Photo } from "@/app/types/schema";
+import { Status, Photo, User } from "@/app/types/schema";
+import { getUserProfile } from "@/app/lib/firebaseUtils";
+import { calculateAge } from "@/app/lib/dateUtils";
 
-interface ProfileData {
-  displayName: string;
-  age: string;
-  guild: string;
-  interestedEvents: string;
-  photos: Photo[];
-  isActive: boolean;
-}
+interface ProfileData
+  extends Pick<
+    User,
+    "displayName" | "age" | "guild" | "interests" | "photos" | "isActive"
+  > {}
 
 export default function ProfilePage() {
   const { user } = useAuth();
   const [formData, setFormData] = useState<ProfileData>({
     displayName: "",
-    age: "",
+    age: 0,
     guild: "",
-    interestedEvents: "",
+    interests: [],
     photos: [],
     isActive: false,
   });
@@ -33,7 +32,7 @@ export default function ProfilePage() {
   const isProfileComplete = () => {
     return (
       formData.displayName.trim() !== "" &&
-      formData.age.trim() !== "" &&
+      formData.age !== 0 &&
       formData.guild.trim() !== "" &&
       formData.photos.length > 0 // Require at least one photo
     );
@@ -57,18 +56,26 @@ export default function ProfilePage() {
       try {
         setStatus(Status.Loading);
         const userDoc = await getDoc(doc(db, "Profiles", user.uid));
-
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-
+        const userData = await getUserProfile(userDoc.id);
+        if (userDoc.exists() && userData !== null) {
           const profileData: ProfileData = {
             displayName: userData.displayName || "",
-            age: userData.age || "",
+            age: userData.age,
             guild: userData.guild || "",
-            interestedEvents: userData.interestedEvents || "",
+            interests: userData.interests,
             photos: userData.photos || [],
             isActive: userData.isActive || false,
           };
+
+          // calc age from bday
+          if (
+            profileData.age === null ||
+            profileData.age === 0 ||
+            profileData.age === undefined
+          ) {
+            profileData.age = calculateAge(userData.birthDate);
+          }
+          console.log(userData);
 
           // Store original data for comparison
           setOriginalData(profileData);
@@ -83,7 +90,7 @@ export default function ProfilePage() {
     };
 
     fetchUserData();
-  }, [user]);
+  }, []);
 
   // Check if form has changes
   const hasChanges = JSON.stringify(formData) !== JSON.stringify(originalData);
@@ -197,8 +204,7 @@ export default function ProfilePage() {
               type="number"
               required
               className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-tuni-blue focus:ring focus:ring-tuni-blue/20"
-              placeholder="ikäsi"
-              value={formData.age}
+              value={formData.age ?? ""}
               onChange={handleChange("age")}
             />
           </div>
@@ -233,8 +239,8 @@ export default function ProfilePage() {
               type="text"
               className="mt-1 block w-full rounded-md border border-gray-300 p-3 shadow-sm focus:border-tuni-blue focus:ring focus:ring-tuni-blue/20"
               placeholder="Listaa tapahtumat joihin menet"
-              value={formData.interestedEvents}
-              onChange={handleChange("interestedEvents")}
+              value={formData.interests}
+              onChange={handleChange("interests")}
             />
           </div>
           <label className="inline-flex items-center cursor-pointer">

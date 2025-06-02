@@ -20,7 +20,7 @@ import {
   arrayUnion,
 } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
-import { User, Photo } from "../types/schema";
+import { User, Photo, SignUpForm } from "../types/schema";
 import {
   deleteObject,
   getDownloadURL,
@@ -115,15 +115,17 @@ export const setSessionCookie = async (
 export const createUserProfile = async (
   userCredential: UserCredential,
   firstName: string,
-  lastName: string
+  lastName: string,
+  age: number
 ): Promise<User> => {
   return {
     uid: userCredential.user.uid,
     displayName: `${firstName} ${lastName}`,
     email: userCredential.user.email || "",
-    birthDate: Timestamp.now(), // Placeholder
+    birthDate: new Date(), // Placeholder
     gender: "", // Placeholder
     guild: "", // Placeholder
+    age: age,
     interests: [], // Placeholder
     photos: [], // Placeholder
     bio: "", // Placeholder
@@ -144,20 +146,18 @@ export const createUserProfile = async (
  * @returns Promise resolving to the UserCredential and created user profile
  */
 export const registerUser = async (
-  email: string,
-  password: string,
-  firstName: string,
-  lastName: string
+  form: SignUpForm
 ): Promise<{ userCredential: UserCredential; userProfile: User }> => {
   try {
     // Step 1: Create the auth user
-    const userCredential = await createAuthUser(email, password);
+    const userCredential = await createAuthUser(form.email, form.password);
 
     // Step 2: Create and save the user profile
     const userProfile = await createUserProfile(
       userCredential,
-      firstName,
-      lastName
+      form.firstName,
+      form.lastName,
+      form.age
     );
     await updateUserWithData(userProfile);
 
