@@ -1,31 +1,25 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { Heart, X } from "lucide-react";
-import { createMatch, storeSwipe } from "@/app/lib/swipeapp";
-import { useAuth } from "@/app/contexts/AuthContext";
+import { storeSwipe } from "@/app/lib/swipeapp";
+import { User } from "../types/schema";
 
-interface Profile {
-  id: string;
-  name: string;
-  age: number;
-  guild: string;
-  pictures: string;
-  questions?: string[];
+interface SwipeableCardProps {
+  profiles: User[];
+  userProfile: User | null;
 }
 
-const SwipeableCard = ({ profiles }: { profiles: Profile[] }) => {
+const SwipeableCard = ({ profiles, userProfile }: SwipeableCardProps) => {
   const [startX, setStartX] = useState(0);
   const [offsetX, setOffsetX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
-  
-  const currentUserID = useAuth().user?.uid;
-
 
   // THIS SHOULD NEVER HAPPEN
-  if (!currentUserID) {
-    throw new Error("No current user found");
+  if (!userProfile) {
+    return <div>Loading profile...</div>;
   }
 
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -60,13 +54,19 @@ const SwipeableCard = ({ profiles }: { profiles: Profile[] }) => {
     setOffsetX(0);
   };
 
-  const currentProfile = profiles[currentProfileIndex];
+  // This is kinda misleading, refers to the current swipeable user(card).
+  // Not the logged in user.
+  const currentProfile: User = profiles[currentProfileIndex];
 
   const handleSwipe = async (direction: string) => {
     if (currentProfileIndex < profiles.length - 1) {
       if (direction === "right") {
-        console.log("Swiping right on", profiles[currentProfileIndex].id);
-        const { isMatch, matchedUserName } = await storeSwipe(currentUserID, profiles[currentProfileIndex].id, "like");
+        console.log("Swiping right on", profiles[currentProfileIndex].uid);
+        const { isMatch, matchedUserName } = await storeSwipe(
+          userProfile.uid,
+          profiles[currentProfileIndex].uid,
+          "like"
+        );
         if (isMatch) {
           console.log(`Matched with ${matchedUserName}!`);
           // TODO: Show match notification/UI with the matched user's name
@@ -74,18 +74,30 @@ const SwipeableCard = ({ profiles }: { profiles: Profile[] }) => {
         }
       } else {
         // Store dislike swipe
-        await storeSwipe(currentUserID, profiles[currentProfileIndex].id, "dislike");
+        await storeSwipe(
+          userProfile.uid,
+          profiles[currentProfileIndex].uid,
+          "dislike"
+        );
       }
       setCurrentProfileIndex((prev) => prev + 1);
     } else {
       // No more profiles, store the last swipe and refresh
       if (direction === "right") {
-        const { isMatch, matchedUserName } = await storeSwipe(currentUserID, profiles[currentProfileIndex].id, "like");
+        const { isMatch, matchedUserName } = await storeSwipe(
+          userProfile.uid,
+          profiles[currentProfileIndex].uid,
+          "like"
+        );
         if (isMatch) {
           alert(`You matched with ${matchedUserName}!`); // Replace this with a proper UI notification
         }
       } else {
-        await storeSwipe(currentUserID, profiles[currentProfileIndex].id, "dislike");
+        await storeSwipe(
+          userProfile.uid,
+          profiles[currentProfileIndex].uid,
+          "dislike"
+        );
       }
       // Refresh the page to get new profiles
       window.location.reload();
@@ -99,6 +111,18 @@ const SwipeableCard = ({ profiles }: { profiles: Profile[] }) => {
       setOffsetX(0);
     }, 200);
   };
+
+  if (userProfile && userProfile.isActive === false) {
+    return (
+      <div className="w-full max-w-sm mx-auto h-screen flex items-center justify-center">
+        <div className="text-center p-8 bg-white rounded-xl shadow-lg">
+          <h3 className="text-xl font-bold mb-4 text-foreground">
+            Laita tilisi näkyväksi muille päästäksesti swaippaamaan!
+          </h3>
+        </div>
+      </div>
+    );
+  }
 
   if (currentProfileIndex >= profiles.length) {
     return (
@@ -114,11 +138,23 @@ const SwipeableCard = ({ profiles }: { profiles: Profile[] }) => {
       </div>
     );
   }
-
+  <>
+    {/* Prefetch next two profile images */}
+    {profiles
+      .slice(currentProfileIndex + 1, currentProfileIndex + 3)
+      .map((profile, idx) => {
+        const url = profile.photos?.[0]?.downloadUrl;
+        return (
+          url && (
+            <link key={`preload-${idx}`} rel="preload" as="image" href={url} />
+          )
+        );
+      })}
+  </>;
   return (
     <div className="w-full max-w-sm mx-auto h-screen flex flex-col items-center justify-center">
       <div
-        className="relative w-102 h-170 rounded-xl shadow-lg overflow-hidden cursor-grab bg-white"
+        className="relative w-102 h-170 min-w-80 min-h-96 rounded-xl shadow-lg overflow-hidden cursor-grab bg-white"
         style={{
           transform: `translateX(${offsetX}px) rotate(${offsetX * 0.1}deg)`,
           transition: isDragging ? "none" : "transform 0.3s ease",
@@ -131,16 +167,25 @@ const SwipeableCard = ({ profiles }: { profiles: Profile[] }) => {
         onMouseUp={handleInteractionEnd}
         onMouseLeave={handleInteractionEnd}
       >
-        <img
-          src={currentProfile.pictures}
-          alt={currentProfile.name}
-          className="w-full h-full object-cover"
-        />
+        {currentProfile.photos && currentProfile.photos.length > 0 ? (
+          <Image
+            src={currentProfile.photos[0].downloadUrl}
+            alt={`${currentProfile.displayName}'s profile picture`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 384px) 100vw, 384px"
+            priority={currentProfileIndex === 0}
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,..."
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+            <span className="text-white text-lg">No Image</span>
+          </div>
+        )}
 
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white">
-          <h3 className="text-xl font-bold">
-            {currentProfile.name}, {currentProfile.age}
-          </h3>
+          <h3 className="text-xl font-bold">{currentProfile.displayName}</h3>
           <p className="text-sm">{currentProfile.guild}</p>
         </div>
 

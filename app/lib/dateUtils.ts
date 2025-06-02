@@ -8,10 +8,10 @@ import { Timestamp } from "firebase/firestore";
 export const formatMessageTime = (timestamp: Timestamp): string => {
   if (!timestamp) return "";
   const date = timestamp.toDate();
-  return date.toLocaleTimeString('fi-FI', { 
-    hour: '2-digit', 
-    minute: '2-digit',
-    hour12: false 
+  return date.toLocaleTimeString("fi-FI", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
   });
 };
 
@@ -35,9 +35,33 @@ export const formatLastActive = (timestamp: Timestamp | any): string => {
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) return `${diffHours} h sitten`;
 
-  return lastActive.toLocaleDateString('fi-FI', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
+  return lastActive.toLocaleDateString("fi-FI", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
   });
-}; 
+};
+
+/**
+ * Calculates the age in years based on the given birthdate.
+ * @param birthdate - The user's birthdate as a Date object or a value convertible to Date.
+ * @returns The calculated age as a number.
+ *
+ * @example
+ * calculateAge(new Date("2000-05-15")); // returns 24 (if current year is 2024 and date is after May 15)
+ */
+export const calculateAge = (birthdate: Date): number => {
+  const today = new Date();
+  const birthDate = new Date(birthdate);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+
+  return age;
+};

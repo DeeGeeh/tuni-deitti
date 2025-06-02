@@ -2,29 +2,39 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getAuth } from "firebase/auth";
 import SwipeableCard from "@/app/components/Profilecard";
-import { getUsersToSwipe } from "@/app/lib/firebaseUtils";
+import { getUserProfile, getUsersToSwipe } from "@/app/lib/firebaseUtils";
+import { User } from "@/app/types/schema";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function SwipePage() {
-  const [users, setUsers] = useState<any[]>([]);
+  const { user } = useAuth();
+  const [users, setUsers] = useState<User[]>([]);
+  const [currentProfile, setCurrentProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const auth = getAuth();
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       try {
-        const userData = await getUsersToSwipe();
+        // Fetch both users to swipe and current user profile
+        const [userData, currentUserProfile] = await Promise.all([
+          getUsersToSwipe(),
+          user ? getUserProfile(user.uid) : Promise.resolve(null),
+        ]);
+
         setUsers(userData);
+        setCurrentProfile(currentUserProfile);
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUsers();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -34,17 +44,5 @@ export default function SwipePage() {
     );
   }
 
-  if (users.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p>No more profiles available. Check back later!</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col items-center justify-center bg-gray-100 h-screen">
-      <SwipeableCard profiles={users} />
-    </div>
-  );
+  return <SwipeableCard profiles={users} userProfile={currentProfile} />;
 }

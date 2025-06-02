@@ -82,16 +82,14 @@ export function validateRegistrationForm(formData: {
   email: string;
   password: string;
   confirmPassword: string;
-  firstName: string;
-  lastName: string;
 }): {
   isValid: boolean;
   errorMessage?: string;
 } {
-  const { email, password, confirmPassword, firstName, lastName } = formData;
+  const { email, password, confirmPassword } = formData;
 
   // Check if all required fields are filled
-  if (!email || !password || !confirmPassword || !firstName || !lastName) {
+  if (!email || !password || !confirmPassword) {
     return {
       isValid: false,
       errorMessage: "Ole hyvä ja täytä kaikki kentät",

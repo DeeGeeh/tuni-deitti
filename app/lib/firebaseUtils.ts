@@ -2,10 +2,10 @@
 import {
   getAuth,
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
   sendEmailVerification,
   UserCredential,
 } from "firebase/auth";
+
 import {
   setDoc,
   doc,
@@ -16,9 +16,27 @@ import {
   collection,
   serverTimestamp,
   addDoc,
+  getFirestore,
+  arrayUnion,
 } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
-import { User } from "../types/schema";
+import { User, Photo, SignUpForm } from "../types/schema";
+import {
+  deleteObject,
+  getDownloadURL,
+  getStorage,
+  ref,
+  uploadBytes,
+} from "firebase/storage";
+
+const FIREBASE_AUTH_ERRORS = {
+  "auth/invalid-credential": "Virheellinen sähköposti tai salasana.",
+  "auth/user-disabled": "Tämä tili on poistettu käytöstä.",
+  "auth/too-many-requests":
+    "Liian monta epäonnistunutta yritystä. Yritä myöhemmin uudelleen.",
+  "auth/network-request-failed": "Verkkovirhe. Tarkista internetyhteytesi.",
+  "auth/invalid-email": "Virheellinen sähköpostiosoite.",
+} as const;
 
 /**
  * Creates a new user account with Firebase Authentication
@@ -97,19 +115,22 @@ export const setSessionCookie = async (
 export const createUserProfile = async (
   userCredential: UserCredential,
   firstName: string,
-  lastName: string
+  lastName: string,
+  age: number
 ): Promise<User> => {
   return {
     uid: userCredential.user.uid,
     displayName: `${firstName} ${lastName}`,
     email: userCredential.user.email || "",
-    birthDate: Timestamp.now(), // Placeholder
+    birthDate: new Date(), // Placeholder
     gender: "", // Placeholder
     guild: "", // Placeholder
+    age: age,
     interests: [], // Placeholder
     photos: [], // Placeholder
     bio: "", // Placeholder
     lastActive: Timestamp.now(),
+    isActive: false,
   };
 };
 
@@ -125,20 +146,18 @@ export const createUserProfile = async (
  * @returns Promise resolving to the UserCredential and created user profile
  */
 export const registerUser = async (
-  email: string,
-  password: string,
-  firstName: string,
-  lastName: string
+  form: SignUpForm
 ): Promise<{ userCredential: UserCredential; userProfile: User }> => {
   try {
     // Step 1: Create the auth user
-    const userCredential = await createAuthUser(email, password);
+    const userCredential = await createAuthUser(form.email, form.password);
 
     // Step 2: Create and save the user profile
     const userProfile = await createUserProfile(
       userCredential,
-      firstName,
-      lastName
+      form.firstName,
+      form.lastName,
+      form.age
     );
     await updateUserWithData(userProfile);
 
@@ -159,11 +178,16 @@ export const registerUser = async (
 };
 
 // User Profile Operations
-export const getUserProfile = async (userId: string) => {
+export const getUserProfile = async (userId: string): Promise<User | null> => {
   try {
     const userDoc = await getDoc(doc(db, "Profiles", userId));
     if (userDoc.exists()) {
-      return { id: userDoc.id, ...userDoc.data() };
+      const data = userDoc.data();
+      return {
+        uid: userDoc.id,
+        isActive: data.isActive,
+        ...data,
+      } as User;
     }
     return null;
   } catch (error) {
@@ -196,6 +220,7 @@ export const getUsersToSwipe = async () => {
     const currentUserProfile = await getDoc(
       doc(db, "Profiles", currentUser.uid)
     );
+
     const matchedUsers = currentUserProfile.data()?.matchedUsers || [];
 
     // Get all users that have swiped right on the current user
@@ -208,14 +233,14 @@ export const getUsersToSwipe = async () => {
     const querySnapshot = await getDocs(collection(db, "Profiles"));
     const userData = querySnapshot.docs
       .map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+        ...(doc.data() as User),
       }))
-      .filter((user) => {
+      .filter((user: User) => {
         return (
-          user.id !== currentUser.uid && // Exclude current user
-          !matchedUsers.includes(user.id) && // Exclude matched users
-          !swipedUserIds.includes(user.id) // Exclude users that have swiped right on
+          user.uid !== currentUser.uid && // Exclude current user
+          user.isActive === true &&
+          !matchedUsers.includes(user.uid) && // Exclude matched users
+          !swipedUserIds.includes(user.uid) // Exclude users that have swiped right on
         );
       });
 
@@ -422,3 +447,136 @@ export const getChats = async () => {
     throw error;
   }
 };
+
+/**
+ * Upload a single image to Firebase Storage.
+ * @param file - The image file to upload.
+ * @param userId - The user ID used to structure the path in storage.
+ * @param order - The order of the image.
+ * @returns An object with the download URL and generated file ID.
+ */
+export const uploadProfileImage = async (
+  file: File,
+  userId: string
+): Promise<{ id: string; url: string }> => {
+  const storage = getStorage();
+  const db = getFirestore();
+
+  const photoId = `photo_${Date.now()}_`;
+  const fileExtension =
+    file.type.split("/")[1] || file.name.split(".").pop() || "jpg";
+
+  const fileName = `${photoId}.${fileExtension}`;
+
+  const storageRef = ref(storage, `users/${userId}/images/${fileName}`);
+
+  try {
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadUrl = await getDownloadURL(snapshot.ref);
+
+    const userRef = doc(db, "Profiles", userId);
+    const docSnap = await getDoc(userRef);
+    const currPhotos: Photo[] = docSnap.data()?.photos || [];
+
+    const newPhoto: Photo = {
+      id: photoId,
+      storageUrl: `users/${userId}/images/${fileName}`,
+      downloadUrl,
+      order: currPhotos.length,
+      uploadedAt: new Date(),
+      isProfilePhoto: currPhotos.length === 0,
+    };
+
+    await updateDoc(userRef, {
+      photos: arrayUnion(newPhoto),
+    });
+    console.log(`Photo uploaded successfully: ${photoId}`);
+
+    return {
+      id: photoId,
+      url: downloadUrl,
+    };
+  } catch (error) {
+    console.error("Error adding photo:", error);
+    throw new Error(
+      `Failed to upload photo: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+};
+
+/**
+ * Remove a single image from Firebase Storage and Firestore.
+ * @param userId - The user ID used to locate the file.
+ * @param imageId - The image's unique identifier.
+ */
+export const removeProfileImage = async (
+  userId: string,
+  imageId: string
+): Promise<void> => {
+  const db = getFirestore();
+  const storage = getStorage();
+
+  try {
+    // Get current photos
+    const profileRef = doc(db, "Profiles", userId); // Match the collection name from upload
+    const profileSnap = await getDoc(profileRef);
+
+    if (!profileSnap.exists()) {
+      throw new Error("Profile not found");
+    }
+
+    const currentPhotos: Photo[] = profileSnap.data()?.photos || []; // Match field name from upload
+
+    // Find the photo to get its storage info
+    const photoToDelete = currentPhotos.find((photo) => photo.id === imageId);
+    if (!photoToDelete) {
+      throw new Error("Photo not found");
+    }
+
+    // Remove from Firestore and reorder remaining photos
+    const updatedPhotos = currentPhotos
+      .filter((photo: Photo) => photo.id !== imageId)
+      .map((photo: Photo, index: number) => ({
+        ...photo,
+        order: index,
+        // If deleted photo was profile photo, make first remaining photo the profile photo
+        isProfilePhoto:
+          photoToDelete.isProfilePhoto && index === 0
+            ? true
+            : photo.isProfilePhoto,
+      }));
+
+    await updateDoc(profileRef, { photos: updatedPhotos });
+
+    // Delete from storage using the correct storage URL
+    const imageRef = ref(storage, photoToDelete.storageUrl);
+    await deleteObject(imageRef);
+
+    console.log(`Photo removed successfully: ${imageId}`);
+  } catch (error) {
+    console.error("Error removing photo:", error);
+    throw new Error(
+      `Failed to remove photo: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+};
+
+export const getProfileImages = async (userId: string): Promise<Photo[]> => {
+  const db = getFirestore();
+  const profileRef = doc(db, "Profiles", userId);
+  const profileSnap = await getDoc(profileRef);
+
+  const currentPictures = profileSnap.data()?.photos || [];
+  return currentPictures;
+};
+
+export function getFirebaseAuthErrorMessage(errorCode: string): string {
+  return (
+    FIREBASE_AUTH_ERRORS[errorCode as keyof typeof FIREBASE_AUTH_ERRORS] ||
+    "Kirjautuminen epäonnistui. Yritä uudelleen."
+  );
+}

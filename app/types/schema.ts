@@ -3,48 +3,62 @@ import { Timestamp } from "firebase/firestore";
 // TODO:
 // UPDATE THIS WHEN FIRESTORE DB SETUP IS FINISHED
 
-interface User {
+export interface User {
   uid: string;
-  displayName: string | null;
+  displayName: string;
   email: string;
-  birthDate: Timestamp;
+  birthDate: Date;
+  age?: number | null;
   gender: string;
   guild: string;
   interests: string[];
-  photos: { url: string; order: number }[];
+  questions?: string[];
+  photos: Photo[];
   bio: string;
   lastActive: Timestamp;
+  isActive: boolean; // this decides if profile is shown to others
 }
 
-interface UserPreferences {
+export interface SignUpForm {
+  step: number;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  firstName: string;
+  lastName: string;
+  birthdate: Date | "";
+  age: number;
+}
+
+export interface UserPreferences {
   interestedIn: string[];
   ageRange: { min: number; max: number };
   distanceMax: number;
   hideProfile: boolean;
 }
 
-interface Swipe {
+export interface Swipe {
   direction: "like" | "dislike";
   timestamp: Timestamp;
 }
 
-/* TODO GOTTA FIGURE THIS SHIT OUT  
-interface Match {
-  matchId: string;
-  users: string[]; // Array of two user IDs!!! Ex: id1__id2
-  timestamp: Timestamp;
-  active: boolean;
+export interface Match {
+  id: string;
+  name: string;
+  avatar: Photo;
+  lastActive: string;
+  unread: boolean;
+  lastMessage: string;
 }
-*/
 
-interface Conversation {
+export interface Conversation {
   matchId: string;
   participants: string[];
   lastMessageTime: Timestamp;
   lastMessagePreview: string;
 }
 
-interface Message {
+export interface Message {
   messageId: string;
   senderId: string;
   content: string;
@@ -52,4 +66,23 @@ interface Message {
   read: boolean;
 }
 
-export type { User, UserPreferences, Swipe, Conversation, Message };
+export interface Photo {
+  id: string;
+  storageUrl: string;
+  downloadUrl: string;
+  order: number;
+  uploadedAt: Date;
+  isProfilePhoto: boolean;
+}
+
+export type PhotoInput = Omit<
+  Photo,
+  "id" | "storageUrl" | "downloadUrl" | "uploadedAt"
+>;
+
+export enum Status {
+  Loading = "loading",
+  Idle = "idle",
+  Saving = "saving",
+  Success = "success",
+}
