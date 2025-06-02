@@ -34,7 +34,7 @@ export default function ImageManager({
             storageUrl: url,
             downloadUrl: url,
             order: images.length + index,
-            uploadedAt: serverTimestamp() as Timestamp,
+            uploadedAt: new Date() as Date,
             isProfilePhoto: false,
           };
         })
