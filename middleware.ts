@@ -4,16 +4,11 @@ import type { NextRequest } from "next/server";
 export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
-  const maintenanceMode = true; // NOTE TO SELF: THIS IS STUPID, BUT WORKS FOR NOW
-
   // Early exits for assets and API routes
   const shouldSkip =
     path.startsWith("/_next/") ||
     path.startsWith("/favicon.ico") ||
-    path.includes(".") ||
-    (maintenanceMode &&
-      (path.startsWith("/api/notify-email") ||
-        path.startsWith("/api/construction-admin-auth")));
+    path.includes(".");
 
   if (shouldSkip) {
     return NextResponse.next();
@@ -24,7 +19,7 @@ export function middleware(req: NextRequest) {
   const hasSession = !!req.cookies.get("session")?.value;
 
   // Maintenance mode
-  if (maintenanceMode && !isAdmin) {
+  if (!isAdmin) {
     return path === "/construction"
       ? NextResponse.next()
       : NextResponse.redirect(new URL("/construction", req.url));
