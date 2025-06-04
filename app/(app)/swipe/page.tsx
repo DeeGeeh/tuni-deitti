@@ -11,7 +11,6 @@ export default function SwipePage() {
   const { user } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [currentProfile, setCurrentProfile] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -26,8 +25,6 @@ export default function SwipePage() {
         setCurrentProfile(currentUserProfile);
       } catch (error) {
         console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -35,14 +32,6 @@ export default function SwipePage() {
       fetchData();
     }
   }, [user]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p>Loading...</p>
-      </div>
-    );
-  }
 
   return <SwipeableCard profiles={users} userProfile={currentProfile} />;
 }
