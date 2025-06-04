@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { uploadProfileImage, removeProfileImage } from "../lib/firebaseUtils";
 import { Photo } from "../types/schema";
-import { serverTimestamp, Timestamp } from "firebase/firestore";
 import Image from "next/image";
 
 interface ImageManagerProps {
