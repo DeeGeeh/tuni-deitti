@@ -1,21 +1,13 @@
 "use client";
-import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
+
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../contexts/AuthContext";
-import { useEffect } from "react";
 
 export default function Navbar() {
-  const pathname = usePathname(); // Get current path
+  const pathname = usePathname();
   const router = useRouter();
   const { user, loading } = useAuth();
-
-  // Redirect to swipe page if signed in.
-  useEffect(() => {
-    if (user && pathname === "/") {
-      router.push("/swipe");
-    }
-  }, [user, router, pathname]);
 
   const handleLoginClick = () => {
     if (!loading && user) {
