@@ -13,6 +13,7 @@ import { auth } from "@/app/lib/firebase";
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  error: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,18 +21,33 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const currentUser = auth.currentUser;
+    if (currentUser) {
       setUser(currentUser);
       setLoading(false);
-    });
+    }
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (currentUser) => {
+        setUser(currentUser);
+        setLoading(false);
+        setError(null);
+      },
+      (error) => {
+        console.error("Authentication state change error: ", error);
+        setError("Authentication error occured.");
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, error }}>
       {children}
     </AuthContext.Provider>
   );
