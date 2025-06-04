@@ -1,4 +1,3 @@
-"use client";
 import Link from "next/link";
 import { Home, User, Heart, Settings } from "lucide-react"; // Example icons
 
