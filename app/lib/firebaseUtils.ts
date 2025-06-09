@@ -18,6 +18,8 @@ import {
   addDoc,
   getFirestore,
   arrayUnion,
+  query,
+  limit as fbLimit,
 } from "firebase/firestore";
 import { db } from "@/app/lib/firebase";
 import { User, Photo, SignUpForm } from "../types/schema";
@@ -207,37 +209,25 @@ export const updateUserProfile = async (userId: string, data: any) => {
 };
 
 // Swipe Operations
-export const getUsersToSwipe = async () => {
+export const getUsersToSwipe = async (uid: string, limit = 5) => {
   try {
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
-
-    if (!currentUser) {
-      throw new Error("No user logged in");
-    }
-
-    // Get the current user's profile to check their matches
-    const currentUserProfile = await getDoc(
-      doc(db, "Profiles", currentUser.uid)
-    );
-
+    const currentUserProfile = await getDoc(doc(db, "Profiles", uid));
     const matchedUsers = currentUserProfile.data()?.matchedUsers || [];
 
-    // Get all users that have swiped right on the current user
-    const swipedUsers = await getDocs(
-      collection(db, "swipes", currentUser.uid, "swiped")
-    );
+    const swipedUsers = await getDocs(collection(db, "swipes", uid, "swiped"));
     const swipedUserIds = swipedUsers.docs.map((doc) => doc.id);
 
     // Get all profiles
-    const querySnapshot = await getDocs(collection(db, "Profiles"));
+    const querySnapshot = await getDocs(
+      query(collection(db, "Profiles"), fbLimit(limit))
+    );
     const userData = querySnapshot.docs
       .map((doc) => ({
         ...(doc.data() as User),
       }))
       .filter((user: User) => {
         return (
-          user.uid !== currentUser.uid && // Exclude current user
+          user.uid !== uid && // Exclude current user
           user.isActive === true &&
           !matchedUsers.includes(user.uid) && // Exclude matched users
           !swipedUserIds.includes(user.uid) // Exclude users that have swiped right on
