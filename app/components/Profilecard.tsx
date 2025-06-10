@@ -17,11 +17,6 @@ const SwipeableCard = ({ profiles, userProfile }: SwipeableCardProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [currentProfileIndex, setCurrentProfileIndex] = useState(0);
 
-  // THIS SHOULD NEVER HAPPEN
-  if (!userProfile) {
-    return <div>Loading profile...</div>;
-  }
-
   const handleTouchStart = (e: React.TouchEvent) => {
     setStartX(e.touches[0].clientX);
     setIsDragging(true);
@@ -57,6 +52,8 @@ const SwipeableCard = ({ profiles, userProfile }: SwipeableCardProps) => {
   // This is kinda misleading, refers to the current swipeable user(card).
   // Not the logged in user.
   const currentProfile: User = profiles[currentProfileIndex];
+
+  if (!userProfile) return; // BANDAID FIX!!!!! FIX
 
   const handleSwipe = async (direction: string) => {
     if (currentProfileIndex < profiles.length - 1) {
