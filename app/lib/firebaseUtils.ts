@@ -4,6 +4,7 @@ import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
   UserCredential,
+  Auth,
 } from "firebase/auth";
 
 import {
@@ -30,6 +31,7 @@ import {
   ref,
   uploadBytes,
 } from "firebase/storage";
+import firebase from "firebase/compat/app";
 
 const FIREBASE_AUTH_ERRORS = {
   "auth/invalid-credential": "Virheellinen sähköposti tai salasana.",
@@ -209,12 +211,17 @@ export const updateUserProfile = async (userId: string, data: any) => {
 };
 
 // Swipe Operations
-export const getUsersToSwipe = async (uid: string, limit = 5) => {
+export const getUsersToSwipe = async (currUser: Auth | null, limit = 5) => {
+  if (!currUser) throw new Error("UserCredentials missing.");
+  const userId = currUser.currentUser?.uid;
+  if (!userId) throw new Error("User ID missing.");
   try {
-    const currentUserProfile = await getDoc(doc(db, "Profiles", uid));
+    const currentUserProfile = await getDoc(doc(db, "Profiles", userId));
     const matchedUsers = currentUserProfile.data()?.matchedUsers || [];
 
-    const swipedUsers = await getDocs(collection(db, "swipes", uid, "swiped"));
+    const swipedUsers = await getDocs(
+      collection(db, "swipes", userId, "swiped")
+    );
     const swipedUserIds = swipedUsers.docs.map((doc) => doc.id);
 
     // Get all profiles
@@ -227,7 +234,7 @@ export const getUsersToSwipe = async (uid: string, limit = 5) => {
       }))
       .filter((user: User) => {
         return (
-          user.uid !== uid && // Exclude current user
+          user.uid !== userId && // Exclude current user
           user.isActive === true &&
           !matchedUsers.includes(user.uid) && // Exclude matched users
           !swipedUserIds.includes(user.uid) // Exclude users that have swiped right on
